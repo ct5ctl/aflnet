@@ -758,6 +758,35 @@ struct queue_entry *choose_seed(u32 target_state_id, u8 mode)
   return result;
 }
 
+char *kl_messages_to_string(klist_t(lms) *kl_messages) {
+  u8 *mem = NULL;
+  u32 len = 0, message_size = 0;
+  kliter_t(lms) *it;
+  u32 message_count = 0;
+
+  // Iterate through all messages in the linked list
+  for (it = kl_begin(kl_messages); it != kl_end(kl_messages); it = kl_next(it)) {
+    message_size = kl_val(it)->msize;
+    mem = (u8 *)ck_realloc(mem, len + message_size + 1);
+
+    // Save packet content
+    memcpy(&mem[len], kl_val(it)->mdata, message_size);
+    len = len + message_size;
+
+    // Null-terminate the string
+    mem[len] = '\0';
+    message_count++;
+  }
+
+  // Convert to a proper C string
+  char *kl_messages_str = (char *)ck_alloc(len + 1);
+  memcpy(kl_messages_str, mem, len);
+  kl_messages_str[len] = '\0';
+  ck_free(mem);
+
+  return kl_messages_str;
+}
+
 /* Update state-aware variables */
 void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
 {
@@ -781,8 +810,9 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
     ck_free(fname);
 
     // New functionality: Save interesting seeds to output.json
+    char *kl_messages_str = kl_messages_to_string(kl_messages);
     cJSON *json_root = cJSON_CreateObject();
-    cJSON *json_kl_messages = cJSON_AddStringToObject(json_root, "kl_messages", kl_messages);
+    cJSON_AddStringToObject(json_root, "kl_messages", kl_messages_str);
     cJSON *json_state_sequence = cJSON_CreateArray();
     for (i = 0; i < state_count; i++) {
       cJSON_AddItemToArray(json_state_sequence, cJSON_CreateNumber(state_sequence[i]));
@@ -800,6 +830,7 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
     }
     ck_free(json_output);
     ck_free(json_fname);
+    ck_free(kl_messages_str);
     cJSON_Delete(json_root);
 
     //Update the IPSM graph
