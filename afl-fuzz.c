@@ -25,7 +25,7 @@
    This is the real deal: the program takes an instrumented binary and
    attempts a variety of basic fuzzing tricks, paying close attention to
    how they affect the execution path.
-  test------------------------------=========================
+  
 */
 
 #define AFL_MAIN
@@ -42,6 +42,7 @@
 #include "debug.h"
 #include "alloc-inl.h"
 #include "hash.h"
+#include "libs/cJSON.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -779,6 +780,28 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
     ck_free(temp_str);
     ck_free(fname);
 
+    // New functionality: Save interesting seeds to output.json
+    cJSON *json_root = cJSON_CreateObject();
+    cJSON *json_kl_messages = cJSON_AddStringToObject(json_root, "kl_messages", kl_messages);
+    cJSON *json_state_sequence = cJSON_CreateArray();
+    for (i = 0; i < state_count; i++) {
+      cJSON_AddItemToArray(json_state_sequence, cJSON_CreateNumber(state_sequence[i]));
+    }
+    cJSON_AddItemToObject(json_root, "state_sequence", json_state_sequence);
+
+    u8 *json_output = cJSON_Print(json_root);
+    u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
+    FILE *json_file = fopen(json_fname, "a");
+    if (json_file) {
+      fprintf(json_file, "%s\n", json_output);
+      fclose(json_file);
+    } else {
+      PFATAL("Unable to create %s", json_fname);
+    }
+    ck_free(json_output);
+    ck_free(json_fname);
+    cJSON_Delete(json_root);
+
     //Update the IPSM graph
     if (state_count > 1) {
       unsigned int prevStateID = state_sequence[0];
@@ -880,6 +903,7 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
       close(fileno(ipsm_dot_file));
       ck_free(tmp);
     }
+
   }
 
   //Update others no matter the new seed leads to interesting state sequence or not
@@ -3993,7 +4017,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
   //s32 fd;
   u8  keeping = 0, res;
 
-  if (fault == crash_mode) {
+  if (fault == crash_mode) { 
 
     /* Keep only if there are new bits in the map, add to queue for
        future fuzzing, etc. */
@@ -4019,7 +4043,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
     /* We use the actual length of all messages (full_len), not the len of the mutated message subsequence (len)*/
     add_to_queue(fn, full_len, 0);
 
-    if (state_aware_mode) update_state_aware_variables(queue_top, 0);
+    if (state_aware_mode) update_state_aware_variables(queue_top, 0); ######
 
     /* save the seed to file for replaying */
     u8 *fn_replay = alloc_printf("%s/replayable-queue/%s", out_dir, basename(queue_top->fname));
