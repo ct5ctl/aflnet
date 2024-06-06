@@ -841,9 +841,11 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
     } else {
       PFATAL("Unable to create %s", json_fname);
     }
-    ck_free(json_output);
-    ck_free(json_fname);
-    ck_free(kl_messages_str);
+    fprintf(stderr, "Debug: Freeing memory at %p\n", json_output);
+    free(json_output);
+    fprintf(stderr, "Debug: Memory freed\n");
+    free(json_fname);
+    free(kl_messages_str);
     cJSON_Delete(json_root);
 
     //Update the IPSM graph
