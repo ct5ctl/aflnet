@@ -808,6 +808,11 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
     save_kl_messages_to_file(kl_messages, fname, 1, messages_sent);
     ck_free(temp_str);
     ck_free(fname);
+    
+    // Ensure the directory exists
+    u8 *json_dir = alloc_printf("%s/new-seeds-interesting", out_dir);
+    ensure_directory_exists(json_dir);
+    ck_free(json_dir);
 
     // New functionality: Save interesting seeds to output.json
     char *kl_messages_str = kl_messages_to_string(kl_messages);
