@@ -845,7 +845,7 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
     free(json_output);
     fprintf(stderr, "Debug: Memory freed\n");
     ck_free(json_fname);
-    free(kl_messages_str);
+    ck_free(kl_messages_str);
     cJSON_Delete(json_root);
 
     //Update the IPSM graph
