@@ -28,7 +28,9 @@ RUN apt-get update && \
 # Download and compile AFLNet
 ENV LLVM_CONFIG="llvm-config-6.0"
 
-ADD --keep-git-dir=true https://github.com/ct5ctl/aflnet.git /opt/aflnet
+# 克隆 AFLNET 项目
+WORKDIR /opt
+RUN git clone https://github.com/ct5ctl/aflnet.git
 WORKDIR /opt/aflnet
 
 RUN make clean all && \
