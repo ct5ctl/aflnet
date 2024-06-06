@@ -1,19 +1,34 @@
 # syntax=docker/dockerfile-upstream:master-labs
 FROM ubuntu:18.04
 
-RUN apt-get -y update && \
-    apt-get -y install sudo \ 
+# 设置环境变量
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get -y install sudo \
     apt-utils \
     build-essential \
     openssl \
-    clang \
+    llvm clang \
     graphviz-dev \
-    libcap-dev
+    git \
+    wget \
+    curl \
+    libglib2.0-dev \
+    libpixman-1-dev \
+    libssl-dev \
+    libxml2-dev \
+    zlib1g-dev \
+    python3 \
+    python3-pip \
+    libcap-dev \
+    gdb
+
 
 # Download and compile AFLNet
 ENV LLVM_CONFIG="llvm-config-6.0"
 
-ADD --keep-git-dir=true https://github.com/aflnet/aflnet.git /opt/aflnet
+ADD --keep-git-dir=true https://github.com/ct5ctl/aflnet.git /opt/aflnet
 WORKDIR /opt/aflnet
 
 RUN make clean all && \
