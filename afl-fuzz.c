@@ -787,6 +787,14 @@ char *kl_messages_to_string(klist_t(lms) *kl_messages) {
   return kl_messages_str;
 }
 
+void ensure_directory_exists(const char *path) {
+  struct stat st = {0};
+
+  if (stat(path, &st) == -1) {
+    mkdir(path, 0700);  // You might need to set appropriate permissions
+  }
+}
+
 /* Update state-aware variables */
 void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
 {
@@ -808,7 +816,7 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
     save_kl_messages_to_file(kl_messages, fname, 1, messages_sent);
     ck_free(temp_str);
     ck_free(fname);
-    
+
     // Ensure the directory exists
     u8 *json_dir = alloc_printf("%s/new-seeds-interesting", out_dir);
     ensure_directory_exists(json_dir);
