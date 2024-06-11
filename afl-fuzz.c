@@ -835,7 +835,7 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
 
             u8 *json_output = cJSON_PrintUnformatted(json_root);  // Use unformatted print to avoid extra spaces/newlines
             u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
-            FILE *json_file = fopen(json_fname, "a+");
+            FILE *json_file = fopen(json_fname, "r+");
 
             if (json_file) {
                 // Check if file is empty
@@ -846,7 +846,16 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
                     fprintf(json_file, "[\n%s\n]", json_output);
                 } else {
                     // Move back before the closing bracket of the JSON array
-                    fseek(json_file, -2, SEEK_END);
+                    fseek(json_file, -1, SEEK_END);
+                    // Check if last character is a newline or space
+                    char last_char;
+                    fread(&last_char, 1, 1, json_file);
+                    if (last_char == '\n' || last_char == ' ') {
+                        fseek(json_file, -2, SEEK_END);
+                    } else {
+                        fseek(json_file, -1, SEEK_END);
+                    }
+
                     // Add a comma to separate the previous entry
                     fprintf(json_file, ",\n%s\n]", json_output);
                 }
@@ -855,7 +864,9 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
             } else {
                 PFATAL("Unable to create %s", json_fname);
             }
+            fprintf(stderr, "Debug: Freeing memory at %p\n", json_output);
             free(json_output);  // 不能用ck_free，因为cJSON_Print返回的是malloc的内存
+            fprintf(stderr, "Debug: Memory freed\n");
             ck_free(json_fname);
             ck_free(kl_messages_str);
             cJSON_Delete(json_root);
