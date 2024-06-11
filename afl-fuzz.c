@@ -807,7 +807,7 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
 
   unsigned int *state_sequence = (*extract_response_codes)(response_buf, response_buf_size, &state_count);
 
-  q->unique_state_count = get_unique_state_count(state_sequence, state_count);
+  q->unique_state_count = get_unique_state_count(state_sequence, stat e_count);
 
   if (is_state_sequence_interesting(state_sequence, state_count)) {
     //Save the current kl_messages to a file which can be used to replay the newly discovered paths on the ipsm
@@ -817,39 +817,53 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
     ck_free(temp_str);
     ck_free(fname);
 
-    if(dry_run == 0)
-    {
-      // Ensure the directory exists
-      u8 *json_dir = alloc_printf("%s/new-seeds-interesting", out_dir);
-      ensure_directory_exists(json_dir);
-      ck_free(json_dir);
+    if (dry_run == 0) {
+            // Ensure the directory exists
+            u8 *json_dir = alloc_printf("%s/new-seeds-interesting", out_dir);
+            ensure_directory_exists(json_dir);
+            ck_free(json_dir);
 
-      // New functionality: Save interesting seeds to output.json
-      char *kl_messages_str = kl_messages_to_string(kl_messages);
-      cJSON *json_root = cJSON_CreateObject();
-      cJSON_AddStringToObject(json_root, "kl_messages", kl_messages_str);
-      cJSON *json_state_sequence = cJSON_CreateArray();
-      for (i = 0; i < state_count; i++) {
-        cJSON_AddItemToArray(json_state_sequence, cJSON_CreateNumber(state_sequence[i]));
-      }
-      cJSON_AddItemToObject(json_root, "state_sequence", json_state_sequence);
+            // New functionality: Save interesting seeds to output.json
+            char *kl_messages_str = kl_messages_to_string(kl_messages);
+            cJSON *json_root = cJSON_CreateObject();
+            cJSON_AddStringToObject(json_root, "kl_messages", kl_messages_str);
+            cJSON *json_state_sequence = cJSON_CreateArray();
+            for (i = 0; i < state_count; i++) {
+                cJSON_AddItemToArray(json_state_sequence, cJSON_CreateNumber(state_sequence[i]));
+            }
+            cJSON_AddItemToObject(json_root, "state_sequence", json_state_sequence);
 
-      u8 *json_output = cJSON_Print(json_root);
-      u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
-      FILE *json_file = fopen(json_fname, "a");
-      if (json_file) {
-        fprintf(json_file, "%s\n", json_output);
-        fclose(json_file);
-      } else {
-        PFATAL("Unable to create %s", json_fname);
-      }
-      fprintf(stderr, "Debug: Freeing memory at %p\n", json_output);
-      free(json_output);  //不能用ck_free，因为cJSON_Print返回的是malloc的内存
-      fprintf(stderr, "Debug: Memory freed\n");
-      ck_free(json_fname);
-      ck_free(kl_messages_str);
-      cJSON_Delete(json_root);
-    }
+            u8 *json_output = cJSON_PrintUnformatted(json_root);  // Use unformatted print to avoid extra spaces/newlines
+            u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
+            FILE *json_file = fopen(json_fname, "a");
+
+            if (json_file) {
+                // Check if file is empty
+                fseek(json_file, 0, SEEK_END);
+                long file_size = ftell(json_file);
+                if (file_size == 0) {
+                    // Write the opening bracket of the JSON array if the file is empty
+                    fprintf(json_file, "[\n");
+                } else {
+                    // Move back before the closing bracket of the JSON array
+                    fseek(json_file, -2, SEEK_END);
+                    // Add a comma to separate the previous entry
+                    fprintf(json_file, ",\n");
+                }
+
+                // Write the new JSON object
+                fprintf(json_file, "%s\n]", json_output);
+                fclose(json_file);
+            } else {
+                PFATAL("Unable to create %s", json_fname);
+            }
+            fprintf(stderr, "Debug: Freeing memory at %p\n", json_output);
+            free(json_output);  // 不能用ck_free，因为cJSON_Print返回的是malloc的内存
+            fprintf(stderr, "Debug: Memory freed\n");
+            ck_free(json_fname);
+            ck_free(kl_messages_str);
+            cJSON_Delete(json_root);
+        }
 
     //Update the IPSM graph
     if (state_count > 1) {
