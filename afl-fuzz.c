@@ -807,7 +807,7 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
 
   unsigned int *state_sequence = (*extract_response_codes)(response_buf, response_buf_size, &state_count);
 
-  q->unique_state_count = get_unique_state_count(state_sequence, stat e_count);
+  q->unique_state_count = get_unique_state_count(state_sequence, state_count);
 
   if (is_state_sequence_interesting(state_sequence, state_count)) {
     //Save the current kl_messages to a file which can be used to replay the newly discovered paths on the ipsm
