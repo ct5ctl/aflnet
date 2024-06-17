@@ -147,10 +147,10 @@ int main(int argc, char* argv[])
 
   //Extract response codes
   state_sequence = (*extract_response_codes)(response_buf, response_buf_size, &state_count);
-
+  
   fprintf(stderr,"\n--------------------------------");
   fprintf(stderr,"\nResponses from server:");
-
+  fprintf("state_sequence:" "%d\n", state_sequence);
   for (i = 0; i < state_count; i++) {
     fprintf(stderr,"%d-",state_sequence[i]);
   }
