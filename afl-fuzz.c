@@ -468,7 +468,7 @@ void expand_was_fuzzed_map(u32 new_states, u32 new_qentries) {
   fuzzed_map_qentries += new_qentries;
 }
 
-/* Get unique state count, given a state sequence */
+/* Get unique state count, given a state sequence  */
 u32 get_unique_state_count(unsigned int *state_sequence, unsigned int state_count) {
   //A hash set is used so that no state is counted twice
   khash_t(hs32) *khs_state_ids;
@@ -819,37 +819,41 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
 
     if(dry_run == 0)
     {
-      // Ensure the directory exists
-      u8 *json_dir = alloc_printf("%s/new-seeds-interesting", out_dir);
-      ensure_directory_exists(json_dir);
-      ck_free(json_dir);
+        // Ensure the directory exists
+        u8 *json_dir = alloc_printf("%s/new-seeds-interesting", out_dir);
+        ensure_directory_exists(json_dir);
+        ck_free(json_dir);
 
-      // New functionality: Save interesting seeds to output.json
-      char *kl_messages_str = kl_messages_to_string(kl_messages);
-      cJSON *json_root = cJSON_CreateObject();
-      cJSON_AddStringToObject(json_root, "kl_messages", kl_messages_str);
-      cJSON *json_state_sequence = cJSON_CreateArray();
-      for (i = 0; i < state_count; i++) {
-        cJSON_AddItemToArray(json_state_sequence, cJSON_CreateNumber(state_sequence[i]));
-      }
-      cJSON_AddItemToObject(json_root, "state_sequence", json_state_sequence);
+        // New functionality: Save interesting seeds to output.json
+        char *kl_messages_str = kl_messages_to_string(kl_messages);
+        cJSON *json_root = cJSON_CreateObject();
+        cJSON_AddStringToObject(json_root, "kl_messages", kl_messages_str);
+        cJSON *json_state_sequence = cJSON_CreateArray();
+        for (i = 0; i < state_count; i++) {
+            cJSON_AddItemToArray(json_state_sequence, cJSON_CreateNumber(state_sequence[i]));
+        }
+        cJSON_AddItemToObject(json_root, "state_sequence", json_state_sequence);
 
-      u8 *json_output = cJSON_Print(json_root);
-      u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
-      FILE *json_file = fopen(json_fname, "a");
-      if (json_file) {
-        fprintf(json_file, "%s\n", json_output);
-        fclose(json_file);
-      } else {
-        PFATAL("Unable to create %s", json_fname);
-      }
-      fprintf(stderr, "Debug: Freeing memory at %p\n", json_output);
-      free(json_output);  //不能用ck_free，因为cJSON_Print返回的是malloc的内存
-      fprintf(stderr, "Debug: Memory freed\n");
-      ck_free(json_fname);
-      ck_free(kl_messages_str);
-      cJSON_Delete(json_root);
+        // Add state_count to the JSON object
+        cJSON_AddNumberToObject(json_root, "state_count", state_count);
+
+        u8 *json_output = cJSON_Print(json_root);
+        u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
+        FILE *json_file = fopen(json_fname, "a");
+        if (json_file) {
+            fprintf(json_file, "%s\n", json_output);
+            fclose(json_file);
+        } else {
+            PFATAL("Unable to create %s", json_fname);
+        }
+        fprintf(stderr, "Debug: Freeing memory at %p\n", json_output);
+        free(json_output);  // 不能用ck_free，因为cJSON_Print返回的是malloc的内存
+        fprintf(stderr, "Debug: Memory freed\n");
+        ck_free(json_fname);
+        ck_free(kl_messages_str);
+        cJSON_Delete(json_root);
     }
+
 
     //Update the IPSM graph
     if (state_count > 1) {
@@ -4071,7 +4075,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
     /* Keep only if there are new bits in the map, add to queue for
        future fuzzing, etc. */
 
-    if (!(hnb = has_new_bits(virgin_bits))) {
+    if (!(hnb = has_new_bits(virgin_bits))) {  //if there are no new bits, return 0
       if (crash_mode) total_crashes++;
       return 0;
     }
@@ -9109,7 +9113,7 @@ int main(int argc, char** argv) {
 
       case 'P': /* protocol to be tested */
         if (protocol_selected) FATAL("Multiple -P options not supported");
-
+        //AFLNet - Select the protocol to be tested， and set the corresponding functions for extracting requests and response codes
         if (!strcmp(optarg, "RTSP")) {
           extract_requests = &extract_requests_rtsp;
           extract_response_codes = &extract_response_codes_rtsp;
