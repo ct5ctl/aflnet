@@ -819,6 +819,11 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
 
     if(dry_run == 0)
     {
+        u8 *temp_str = state_sequence_to_string(state_sequence, state_count);
+        u8 *fname = alloc_printf("%s/cc-replayable-new-ipsm-paths/id:%s:%s", out_dir, temp_str, dry_run ? basename(q->fname) : "new");
+        save_kl_messages_to_file(kl_messages, fname, 1, messages_sent);
+        ck_free(temp_str);
+        ck_free(fname);
         // Ensure the directory exists
         u8 *json_dir = alloc_printf("%s/new-seeds-interesting", out_dir);
         ensure_directory_exists(json_dir);
