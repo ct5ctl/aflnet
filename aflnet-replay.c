@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
   
   fprintf(stderr,"\n--------------------------------");
   fprintf(stderr,"\nResponses from server:");
-  fprintf("state_sequence:" "%d\n", state_sequence);
+  
   for (i = 0; i < state_count; i++) {
     fprintf(stderr,"%d-",state_sequence[i]);
   }
