@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include "alloc-inl.h"
 #include "aflnet.h"
+#include <arpa/inet.h> // 添加这个头文件以确保inet_addr函数可用
 
 #define server_wait_usecs 10000
 
@@ -52,7 +53,7 @@ int main(int argc, char* argv[])
   else if (!strcmp(argv[2], "NTP")) extract_response_codes = &extract_response_codes_NTP;
   else if (!strcmp(argv[2], "DHCP")) extract_response_codes = &extract_response_codes_dhcp;
   else if (!strcmp(argv[2], "SNTP")) extract_response_codes = &extract_response_codes_SNTP;  
-else {fprintf(stderr, "[AFLNet-replay] Protocol %s has not been supported yet!\n", argv[2]); exit(1);}
+  else {fprintf(stderr, "[AFLNet-replay] Protocol %s has not been supported yet!\n", argv[2]); exit(1);}
 
   portno = atoi(argv[3]);
 
@@ -115,15 +116,26 @@ else {fprintf(stderr, "[AFLNet-replay] Protocol %s has not been supported yet!\n
   //And save all the server responses
   while(!feof(fp)) {
     if (buf) {ck_free(buf); buf = NULL;}
+
+    // 修改开始：添加对文件大小的调试输出
     if (fread(&size, sizeof(unsigned int), 1, fp) > 0) {
       packet_count++;
     	fprintf(stderr,"\nSize of the current packet %d is  %d\n", packet_count, size);
+
+      // 检查是否读取了异常大的size
+      if (size > 10000) { // 设定一个合理的上限，假设10000字节
+        fprintf(stderr, "Error: Packet size %d is too large\n", size);
+        fclose(fp);
+        close(sockfd);
+        return 1;
+      }
+      // 修改结束
 
       buf = (char *)ck_alloc(size);
       fread(buf, size, 1, fp);
 
       if (net_recv(sockfd, timeout, poll_timeout, &response_buf, &response_buf_size)) break;
-      n = net_send(sockfd, timeout, buf,size);
+      n = net_send(sockfd, timeout, buf, size);
       if (n != size) break;
 
       if (net_recv(sockfd, timeout, poll_timeout, &response_buf, &response_buf_size)) break;
@@ -156,4 +168,3 @@ else {fprintf(stderr, "[AFLNet-replay] Protocol %s has not been supported yet!\n
 
   return 0;
 }
-
