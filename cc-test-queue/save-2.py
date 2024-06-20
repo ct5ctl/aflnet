@@ -18,6 +18,7 @@ import struct
 packet1 = b"SETUP rtsp://127.0.0.1:8554/wavAudioTest/track1 RTSP/1.0\r\nCSeq: 3\r\nUser-Agent: ./testRTSPClient (LIVE555 Streaming Media v2018.08.28)\r\nTransport: RTP/AVP;unicast;client_port=37952-37953\r\n\r\n"
 packet2 = b"TEARDOWN rtsp://12000022B87.0.0.1:8554/wavAudioTest/ RTSP/1.0\r\nCSeq: 5\r\nUser-Agent: ./tes"
 
+
 output_file_path = './cc-test-queue/packet_file'
 
 # 打开文件以二进制写入
