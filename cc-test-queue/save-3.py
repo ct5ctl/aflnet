@@ -1,7 +1,7 @@
 import struct
 
 # 准备报文内容
-message_sequence = "SETUP rtsp://B27.0.4.1:855ssssnsssss4Pwass\u0010sssssss455ssrs>wavAudioTest/trvAudioTest/ing Media v2018.08.28/testRTSPClien@(LIVE55K StrZam@(LIVE55K Streaming Media v2018rt\u001f RTP/AVP;unibbbbbbbbent_po|t=37952-37953\r\n\r\nSETUP rtsp://B27.0.4.1:855ssssnsssss4Pwassssssssss455ssrs>wavAudioTest/trvAudioTest/ing Media v2018.08.28/testRTSPClien@(LIVE55K Stream@(LIVE55K Streaming Media v2018rt\u001f RTP/AVP;unibbbbbbbbent_po|t=37952-37953\r\n\r\nDESCRIBE rtsp://127.0.0.1:8554/wavAudioTest RTSP/1.0\r\nCSeq: 2\r\nUser-Agent: 55 Streaming Media v2038.08.28)\r\nAccept: application/sdp\r�"
+message_sequence = "DESCRIBE rtsp://127.0.0-1:8554/ac3AudioTest RTSP/1.0\r\nCSeq:\t2\r\nUser-Agent: ./testRTSPClient (LIVE555 Streeaming Media v2018.08�28)\r\nSession: 000022B8\r\n\r\nDESCRIBE rtsp://127.0.0-1:8554/ac3AudioTest RTSP/1.0\r\nCSeq:\t2\r\nUser-Agent: ./testRTSPClient (LIVE555 Streeaming Media v2018.08�28)\r\nSession: 00002\u0010B8\r\n\r\nDESCRIBE rtsp://127.0.0-1:8554/ac3AudioTest RTSP/1.0\r\nCSeq:\t2\r\nUser-Agent: ./testRTSPClient (LIVE555 Streeaming Media v2018.08�28)\r\nSession: 000022B8\r\n\r\nSETUP "
 # 将字符串转换为二进制
 message_sequence_bytes = message_sequence.encode('utf-8', errors='replace')
 
