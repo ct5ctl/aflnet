@@ -9,7 +9,7 @@ message_sequence_bytes = message_sequence.encode('utf-8', errors='replace')
 packets = message_sequence_bytes.split(b"\r\n\r\n")
 
 # 输出文件路径
-output_file_path = './cc-test-queue/packet_fileb_t3b'
+output_file_path = './cc-test-queue/packet_filebt3b'
 
 # 打开文件以二进制写入
 with open(output_file_path, "wb") as f:
