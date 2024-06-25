@@ -42,98 +42,89 @@ def process_message_sequences(q1, s1, q2, s2):
     return pos_diff_status, json_diff_queue_status
 
 
-def generate_analysis(q1, s1, q2, s2, key_variant_message):
-    # 构造prompt模板
-    prompt_template = """
-    {q1}:
-    "{q1}"
+def analyze_rtsp_mutation(q1, s1, q2, s2, key_variant_message):
+    # Function to generate prompt based on input
+    def generate_prompt(q1, s1, q2, s2, key_variant_message):
+        prompt = f"""
+        q1:
 
-    {s1}:
-    "{s1}"
+        "{q1}"
 
-    {q2}:
-    "{q2}"
+        s1:
 
-    {s2}:
-    "{s2}"
+        "{json.dumps(s1)}"
 
-    {key_variant_message}:
-    "{key_variant_message}"
+        q2:
 
-    我正在对RTSP协议进行协议模糊测试，报文序列{q2}由报文序列{q1}变异而来，{q1}到达的状态序列为{s1}，{q2}到达的状态序列为{s2}，{key_variant_message}是变异后发生状态转换的报文对，请你对{key_variant_message}中的各报文对按以下步骤进行分析：
+        "{q2}"
 
-    1. 找出这些报文对的变异片段，变异片段长度应尽可能小（只是不同的部分，而不是整个报文或字段）
-    2. 请你对这些变异片段进行分析，筛选出有可能导致协议状态由{key_variant_message[q1][变异前状态]}转换到{key_variant_message[q2][变异后状态]}的变异片段，分别对这些变异片段的状态转换重要性进行评分
-    3. 这些变异片段还可以如何变异以导致相同的状态转换，给出变异后的该片段
+        s2:
 
-    注意：
-    1. 报文序列包含若干个报文，且报文有可能不为完整的格式，请以分隔符”\r\n\r\n“区分前后不同报文
+        "{json.dumps(s2)}"
 
-    你的回答需要以json为输出格式，格式如下：
+        {{"关键变异报文对Key_variant_message"}}：
 
-    {{
-      # 描述变异类型
-      "Difference1": "XXX",
-      "变异类型":"XXX",
-      "变异前状态":XXX
-      "变异后状态":XXX
-      # 描述变异片段位置
-      "报文对位置":XXX,
-      "q1变异片段位置信息":  
-      {{"变异片段内容":"XXX", 
-      "报文请求方法":"XXX", #变异片段所在报文的请求方法
-      "报文字段":"XXX", #变异片段所在字段
-      "报文字段偏移":XX, #变异片段在所在字段的偏移
-      "变异片段长度":XX, }},
-      "q2变异片段位置信息":
-      {{"变异片段内容":"XXX",
-      "报文请求方法":"XXX", 
-      "报文字段":"XXX",
-      "报文字段偏移":XX,
-      "变异片段长度":XX, }},
-      # 评价该变异片段对状态转换重要性，若变异该片段更可能导致状态转换则给出更高分数，并给出打分的依据/原因
-      "ImportanceScore": XX,
-      "打分依据/原因":"",
-      # 分析推断该片段还可以如何变异能导致协议状态转换，直接给出变异后的该片段和变异后可能到达的状态（状态用数字表示），可以有多个
-      "OtherMutationMethods": {{"变异1":"XXX","可能转换到的状态":"XXX"}，
-                                {{"变异2":"XXX","可能转换到的状态":"XXX"}，
-                                {{"变异3":"XXX","可能转换到的状态":"XXX"}}
-    }},
-    {{
-      "Difference2": "XXX",
-      #格式同上
-    }}
-    """
-    
-    prompt = prompt_template.format(
-        q1=q1,
-        s1=json.dumps(s1),
-        q2=q2,
-        s2=json.dumps(s2),
-        key_variant_message=json.dumps(key_variant_message, ensure_ascii=False)
-    )
+        {json.dumps(key_variant_message, ensure_ascii=False)}
 
-    print(prompt)
+        我正在对RTSP协议进行协议模糊测试，报文序列{{q2}}由报文序列{{q1}}变异而来，{{q1}}到达的状态序列为{{s1}}，{{q2}}到达的状态序列为{{s2}}，{{关键变异报文对}}是变异后发生状态转换的报文对，请你对{{关键变异}}中的各报文对按以下步骤进行分析：
 
-    # # 调用GPT-4 API
+        1. 找出这些报文对的变异片段，变异片段长度应尽可能小（只是不同的部分，而不是整个报文或字段）
+        2. 请你对这些变异片段进行分析，筛选出有可能导致协议状态由{{变异前状态}}转换到{{变异后状态}}的变异片段，分别对这些变异片段的状态转换重要性进行评分
+        3. 这些变异片段还可以如何变异以导致相同的状态转换，给出变异后的该片段
+
+        注意：报文序列包含若干个报文，且报文有可能不为完整的格式，请以分隔符”\r\n\r\n“区分前后不同报文
+
+        你的回答需要以json为输出格式，格式如下：
+
+        {
+          "Difference1": "XXX",
+          "变异类型":"XXX",
+          "变异前状态":XXX,
+          "变异后状态":XXX,
+          "报文对位置":XXX,
+          "q1变异片段位置信息":  
+          {{"变异片段内容":"XXX", 
+          "报文请求方法":"XXX", 
+          "报文字段":"XXX", 
+          "报文字段偏移":XX, 
+          "变异片段长度":XX, }},
+          "q2变异片段位置信息":
+          {{"变异片段内容":"XXX",
+          "报文请求方法":"XXX",  
+          "报文字段":"XXX", 
+          "报文字段偏移":XX, 
+          "变异片段长度":XX, }},
+          "ImportanceScore": XX, 
+          "打分依据/原因":"",
+          "OtherMutationMethods": [{"变异1":"XXX","可能转换到的状态":"XXX"}, # 分析推断该片段还可以如何变异能导致协议状态转换，直接给出变异后的该片段和变异后可能到达的状态（状态用数字表示），可以有多个
+                                  {"变异2":"XXX","可能转换到的状态":"XXX"},
+                                  {"变异3":"XXX","可能转换到的状态":"XXX"}]
+        },
+        {
+          "Difference2": "XXX", 
+        }
+        """
+        return prompt
+
+    # Generate prompt
+    prompt = generate_prompt(q1, s1, q2, s2, key_variant_message)
+    print("prompt:  ", prompt)
+
+    # # Call GPT-4 with the generated prompt
     # response = openai.Completion.create(
-    #     engine="gpt-4",
+    #     model="text-davinci-003",
     #     prompt=prompt,
     #     max_tokens=1500,
     #     temperature=0.7
     # )
 
-    # # 获取回答
-    # answer = response.choices[0].text.strip()
+    # # Save the response to a JSON file
+    # timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    # filename = f'./cc-rule-base/answer/answer-{timestamp}.json'
+    # with open(filename, 'w', encoding='utf-8') as file:
+    #     json.dump(response.choices[0].text.strip(), file, ensure_ascii=False, indent=4)
 
-    # # 保存回答到文件
-    # timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    # file_path = f"./cc-rule-base/answer/answer-{timestamp}.json"
-
-    # with open(file_path, 'w', encoding='utf-8') as f:
-    #     f.write(answer)
-
-    # return answer
+    # print(f'Response saved to {filename}')
 
 
 
@@ -165,5 +156,5 @@ if __name__ == "__main__":
     # }
 
     # 调用函数
-    result = generate_analysis(q1, s1, q2, s2, key_variant_message)
+    analyze_rtsp_mutation(q1, s1, q2, s2, key_variant_message)
     # print(result)
