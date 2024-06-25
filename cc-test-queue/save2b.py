@@ -1,7 +1,7 @@
 import struct
 
 # 准备报文内容
-message_sequence = "SETUP rtsp://127.0.0.1:8554/wavAudioTest/track1 RTSP/1\f0\r\nCSeq: 3\r\nUser-Agent: ./testRTSPCl�ent (LIVE555 Streaming Media v2018.08.28)\r\nTransport: RTP/AVP;uni�ast;client_port=374444444444444444444444444444444444444444444444444I4444444444444444E44444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444!444444.28)\r\nTransport: RTP/AVP;unicast;client_port=37952-37953\r\n\r\nDESCRIBE rtsp://127.0.0.1:8554/wavAudioTest RTSP/1.0\r\nCSeq: 2\r\nUser-Agent: ./testRTSPClient (LIVE555 Stre�aming Media v2018.08.28)\r\nSession: 000022B8\r\n\r\nPLAY rtsp://127.0.0.1:8554/wavAudioTest/ RTSP/1.0\r\nCSeq: 4\r\nUser-Agent: ./testRTSSClient (LIVE55\u0016 Strevming Media v2018.08.28)\r\nSession: 000022B8\r\nRanme: npt=matroskaFileTest /127.0.0.1:8454/wavAudioTezt/ RTSP/1.0\r\nCSeq: 4\r\nUs�r-Agen "
+message_sequence = "DESCRIBE rtsp://127.0.0.1:abcd/wavAudioTest RTSP/1.0\r\nCSeq: 2\r\nUser-Agent: ./testRTSPClient (LIVE555 Streaming Media v2018.08.28)\r\nAccept= application v20Q8.0DES rtsp://127.0.0.1:8554/wavAudioTest/ RTSP/1.0\r\nCSeq: 5\r\nUser-Agent: ./testRTAgent: ./testRTSPClient (LIVE555 Etreaming Media v2018.08.28)\r\nSession: 000022B8\r\n\r\nTE,RDOSETUPWN rtsPAUS<pR//127.0.0.1e8d54/wavAudgPLAYoTest/ RTSP/1�0\r�CSeq: \r\nUng PTIONSiov2018.08.28)\r\nAccept:\u000f0NSiov2018K22B8\r\n\r\nTEARDOWN rtsp://127.0.CCCCCCCCCCCCCCCCCCCCCCCCTSP/1.0\r\nCSeq: 5\r\nUser-AgeLt: ./tesZRTS�Client (LIVE555 Samingac3OudioTest.08.28)\r\nSession: 000022;8\r\n\r\nDESCRIBE rtsp:/�\u000327�.0.1:8554/wavAud1:8554/wavA8554/wavAudioioTest RCSe"
 # 将字符串转换为二进制
 message_sequence_bytes = message_sequence.encode('utf-8', errors='replace')
 
@@ -9,7 +9,7 @@ message_sequence_bytes = message_sequence.encode('utf-8', errors='replace')
 packets = message_sequence_bytes.split(b"\r\n\r\n")
 
 # 输出文件路径
-output_file_path = './cc-test-queue/packet_filet4'
+output_file_path = './cc-test-queue/packet_filet3b_r12'
 
 # 打开文件以二进制写入
 with open(output_file_path, "wb") as f:

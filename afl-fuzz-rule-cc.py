@@ -1,12 +1,12 @@
 import json
 import json
-import openai
+
 import os
 from datetime import datetime
 
-
-# 设置OpenAI API密钥
-openai.api_key = 'your-api-key-here'
+# import openai
+# # 设置OpenAI API密钥
+# openai.api_key = 'your-api-key-here'
 
 
 def process_message_sequences(q1, s1, q2, s2):
@@ -131,13 +131,19 @@ def analyze_rtsp_mutation(q1, s1, q2, s2, key_variant_message):
 
 if __name__ == "__main__":
     # 示例数据
+    #t1
     q1 = "DESCRIBE rtsp://127.0.0\u001d1:8554/wavAudioTest RTSP/1.0\r\nCSeq:\t2\r\nrser-Agent: ./tes[RTSPClient (LIVE555 Streeaming Media v2018.08.28)\r\nSession: 000022B8\r\n\r\nTEARDOWN rtsO://127.0.0.1:8554/wavAudioTest/(RTSP/1.0\r\nCSeq: 5\r\nUser-Agent: .PAUSERTSPClientGET_PARAMETER (LIVE555 Sdreamitg Media v2018.08.28)\r\nSessi�n: "
     s1 = [200, 454, 454, 400, 200, 400, 400, 454, 404, 405, 400, 400, 454, 404, 405, 400, 454, 404, 405, 400, 400, 454, 200, 405, 400, 400, 454, 404, 405, 400, 400, 454, 404, 405, 400, 400, 454, 404, 405, 400, 400, 454, 454, 404, 405, 400, 400, 454, 404, 405, 400, 400, 454, 404, 405, 400, 400, 454, 404, 405, 400, 400, 454, 404, 400, 400, 400, 454, 404, 405, 400, 400, 454, 404, 405, 400, 405, 404, 405, 400, 400, 454, 454, 200, 200, 200, 454, 454, 405, 400, 405, 454, 200, 405, 200, 200, 404, 404, 400, 200]
-    q2 = "DESCRIBE rtsp://127.0.0.1:8554/wavAudioTest RTSP/1.0\r\nCSeq: 2\r\nUser-Agent: ./testRTSPClient (LIVE555 Streaming Media v2018.08.28)\r\nAccept= application v20Q8.0DES rtsp://127.0.0.1:8554/wavAudioTest/ RTSP/1.0\r\nCSeq: 5\r\nUser-Agent: ./testRTAgent: ./testRTSPClient (LIVE555 Etreaming Media v2018.08.28)\r\nSession: 000022B8\r\n\r\nTE,RDOSETUPWN rtsPAUS<pR//127.0.0.1e8d54/wavAudgPLAYoTest/ RTSP/1�0\r�CSeq: \r\nUng PTIONSiov2018.08.28)\r\nAccept:\u000f0NSiov2018K22B8\r\n\r\nTEARDOWN rtsp://127.0.CCCCCCCCCCCCCCCCCCCCCCCCTSP/1.0\r\nCSeq: 5\r\nUser-AgeLt: ./tesZRTS�Client (LIVE555 Samingac3OudioTest.08.28)\r\nSession: 000022;8\r\n\r\nDESCRIBE rtsp:/�\u000327�.0.1:8554/wavAud1:8554/wavA8554/wavAudioioTest RCSe"
-    s2 = [200, 405, 400, 400, 454, 200, 200, 200, 400, 454, 200, 405, 200, 200, 404, 404]
+    # # t3
+    # q2 = "DESCRIBE rtsp://127.0.0.1:8554/wavAudioTest RTSP/1.0\r\nCSeq: 2\r\nUser-Agent: ./testRTSPClient (LIVE555 Streaming Media v2018.08.28)\r\nAccept= application v20Q8.0DES rtsp://127.0.0.1:8554/wavAudioTest/ RTSP/1.0\r\nCSeq: 5\r\nUser-Agent: ./testRTAgent: ./testRTSPClient (LIVE555 Etreaming Media v2018.08.28)\r\nSession: 000022B8\r\n\r\nTE,RDOSETUPWN rtsPAUS<pR//127.0.0.1e8d54/wavAudgPLAYoTest/ RTSP/1�0\r�CSeq: \r\nUng PTIONSiov2018.08.28)\r\nAccept:\u000f0NSiov2018K22B8\r\n\r\nTEARDOWN rtsp://127.0.CCCCCCCCCCCCCCCCCCCCCCCCTSP/1.0\r\nCSeq: 5\r\nUser-AgeLt: ./tesZRTS�Client (LIVE555 Samingac3OudioTest.08.28)\r\nSession: 000022;8\r\n\r\nDESCRIBE rtsp:/�\u000327�.0.1:8554/wavAud1:8554/wavA8554/wavAudioioTest RCSe"
+    # s2 = [200, 405, 400, 400, 454, 200, 200, 200, 400, 454, 200, 405, 200, 200, 404, 404]
+    # t2
+    q2 = "DESCRIBE rtsp://1\u001d7.0H0.1:85u4/wavioTest RTQP/1.0\r\nCSeq: 2\r\nUs�CSeq: 2\r\nUstestRTSPClient (LIVE555 Streaming Media v20?P/1.0\r\nCSeq: 2\r\nUs�r-Agent: ./tatimn/sdp\r\n\r\nPLAY rtsp://127.0.0.1:8554/wavAudioTest/ RTSP/1.0\r\nCSeq: 4\r\nUGET_PARAMETERtestRTSPClient (LIVE555 Streaming Media v2018.08.28)\r\nSe�sion: 000022B8\r�Range:  rtsp://127.0.0.1:8554/wavAudioTest/track1 RTSP/1.0\r\nCSeq: 3(\nUser-Agent: ./testRTSPClient (LIVE555 Streami08.28)\r\nTTP/AVP;unic`st;client_port=37952-37953\r\n#\nPLAY rtsp://127.0.0.1:8554/wavAudioTest/ RTSP/1.0\r\nCSeq: 4\r\nUser-Agent: ./testRTSPClient (LIVE555 Streaming Media v2018.08.28)\r\nSession: 000022B8\r\nRange: npt=0.000-\r\n\r\nTEARDOWN rtsp://127.0.0.1:8554/wavAudioTest/ RTSP/1.0\r\nCSeq: 5\r\nUser-Agent: ./testRTSPClient (LIVE555 Streaming Media v2018.08.28)\r\nSession: 000022B8\r\n\r\nSETUP rtsp://127.0.0.1:8554/wavAudioTest/track1 RTSP/1.0\r\nCSeq: 3\r\nUser-Agent: ./testRTSPClient (LIVE55\u0013 Streaming Media v2018.08.28)\r\nTranspnit: RTP/AVP;unicast;client_port=3795tsp://12nge: npt=0.000-\r\n\r\nDst RTQP/1.0\r\nCSeq: 2\r\nUs�r-Agent: ./testRTSPClient (LIVE555 Streaming Media v20?\u0018.08'28)\r\nAccept: a�Transport/sdp\r\n\r\nPLAY rtsp://127.0.0.1:8554/wavAudioTest/ RTSP/1.0\r\nCSeq: 4\r\nUGeT_PARAMETERtestRTSPClient (LIVE555 Streaming Media v2018.08.28)\r\nSess�on: 000022B8\r\nRange6 npt=0.000-\r\n\r\nDESCRIBE rtsp://1\u001d7.0H0.1:85u4/wavioTest RTQP/1.0\r\nCSeq: 2\r\nUs�CSeq: 2\r\nUstestRTSPClSET_PARAMETERient (LIVE555 Streaming Media v20?P/1.0\r\nCSeq: 2\r\nUs�r-Agent: ./tatimn/sdp\r\n\r\nPLAY rtsp://127.0.0.1:8554/wavAudioTest/ RTSP/1.0\r\nCSeq: 4\r\nUGET_PARAMETERtestRTSPClient (LIVE555 Streaming55 St Media v2018.08.28)\r\nSe�sion: 000022B8\r�Range:  rtsp://127.0.0.1:8554/wavAudioTest/track1 RTSP/1.0\r\nCSeq: 3\r\nUser-Agent: ./testRTSPClient (LIVE555 Streami08.28)\r\nTTP/AVP;unicast;client_port=37952-37953\r\n\r\nTEARDOWN rtsp://127.0.0.1:8554/wavAudioTest/ RTSs/1.0\r\nCSeq: 5\r\n\\ser-Agent: ./tesOPTIO\u0010StRTSPClient (LIVE555 Streaming Media v2018.08�"
+    s2 = [400, 454, 454, 200, 400, 454, 400, 454, 400, 400, 400, 400, 200, 400, 400, 400, 200, 400, 400, 400, 200, 400, 400, 400, 200, 400, 400, 400, 400, 200, 400, 400, 400, 200, 400, 400, 400, 200, 400, 400, 400, 200, 400, 400, 400, 400, 400, 400, 200, 200, 200, 400, 454, 400, 454, 400, 400, 400, 200, 400, 400, 400, 200, 400, 400, 400, 200, 400, 400, 400, 200, 400, 400, 400, 400, 200, 400, 400, 400, 200, 400, 400, 400, 200, 400, 400, 400, 200, 400, 400, 400, 200, 404, 405, 400, 400, 400, 200, 400, 200, 400, 200, 400, 200, 400, 400, 200, 400, 200, 400, 400, 200, 400, 200, 400, 400, 200, 400, 200, 400, 400, 200, 400, 200, 400, 400, 200, 400, 200, 400, 400, 200, 400, 200]
 
     # 运行函数
     pos_diff_status, key_variant_message = process_message_sequences(q1, s1, q2, s2)
+    print("key_variant_message:  ", key_variant_message)
 
     # # 打印结果
     # print("不同位置:", pos_diff_status)
@@ -156,5 +162,5 @@ if __name__ == "__main__":
     # }
 
     # 调用函数
-    analyze_rtsp_mutation(q1, s1, q2, s2, key_variant_message)
+    # analyze_rtsp_mutation(q1, s1, q2, s2, key_variant_message)
     # print(result)
