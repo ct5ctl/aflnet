@@ -8,7 +8,7 @@ table_rule = {}
 
 import openai
 # 设置OpenAI API密钥
-openai.api_key = ''
+openai.api_key = 
 
 
 def process_message_sequences(q1, s1, q2, s2):
