@@ -1,15 +1,16 @@
 import json
 import os
 from datetime import datetime
+from orderedmultidict import omdict
 
 
-# Define a global variable for table_rule
-table_rule = {}
+# Define a global variable for table_rule using ordered multi-dict
+table_rule = omdict()
 
 import openai
 # # 设置OpenAI API密钥    
-# openai.api_key = 'sk-xxx'
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = 'sk-xxx'
+# openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 def process_message_sequences(q1, s1, q2, s2):
@@ -190,11 +191,9 @@ def analyze_rtsp_mutation(q1, s1, q2, s2, key_variant_message):
 
 
 
-# New function to process the information and update table_rule
 def update_table_rule(q1, s1, q2, s2, key_variant_message):
     global table_rule
 
-    # Call the analyze_rtsp_mutation function
     gpt_response = analyze_rtsp_mutation(q1, s1, q2, s2, key_variant_message)
     gpt_data = json.loads(gpt_response)
 
@@ -205,11 +204,9 @@ def update_table_rule(q1, s1, q2, s2, key_variant_message):
         q1_mutation_info = diff["q1变异位段位置信息"]
         other_mutation_methods = diff["OtherMutationMethods"]
 
-        # Ensure there's an entry for the target state
         if post_state not in table_rule:
-            table_rule[post_state] = []
+            table_rule[post_state] = omdict()
 
-        # Extract relevant information and update table_rule
         entry = {
             "原状态": pre_state,
             "变异位段位置及相应变异方法": {
@@ -223,9 +220,9 @@ def update_table_rule(q1, s1, q2, s2, key_variant_message):
             "ImportanceScore": importance_score
         }
 
-        # Add the entry to the target state's mutation table
         table_rule[post_state].append(entry)
-    # Save table_rule to a file
+
+    # Save table_rule to a JSON file
     with open('table_rule.json', 'w', encoding='utf-8') as f:
         json.dump(table_rule, f, ensure_ascii=False, indent=4)
 
