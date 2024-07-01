@@ -6,7 +6,7 @@ from datetime import datetime
 # Define a global variable for table_rule
 table_rule = {}
 
-# import openai
+import openai
 # # 设置OpenAI API密钥
 # openai.api_key = 'sk-xxx'
 openai.api_key = os.getenv("OPENAI_API_KEY")
