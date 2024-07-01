@@ -6,9 +6,9 @@ from datetime import datetime
 # Define a global variable for table_rule
 table_rule = {}
 
-import openai
-# 设置OpenAI API密钥
-openai.api_key = 'sk-xxx'
+# import openai
+# # 设置OpenAI API密钥
+# openai.api_key = 'sk-xxx'
 
 
 def process_message_sequences(q1, s1, q2, s2):
