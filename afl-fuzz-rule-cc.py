@@ -9,6 +9,7 @@ table_rule = {}
 # import openai
 # # 设置OpenAI API密钥
 # openai.api_key = 'sk-xxx'
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 def process_message_sequences(q1, s1, q2, s2):
