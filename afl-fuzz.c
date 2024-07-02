@@ -832,18 +832,19 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
         // New functionality: Save interesting seeds to output.json
         char *kl_messages_str = kl_messages_to_string(kl_messages);
         cJSON *json_root = cJSON_CreateObject();
-        cJSON_AddStringToObject(json_root, "kl_messages", kl_messages_str);
+        cJSON_AddStringToObject(json_root, "selected_seed", kl_messages_str);
         cJSON *json_state_sequence = cJSON_CreateArray();
         for (i = 0; i < state_count; i++) {
             cJSON_AddItemToArray(json_state_sequence, cJSON_CreateNumber(state_sequence[i]));
         }
         cJSON_AddItemToObject(json_root, "state_sequence", json_state_sequence);
 
-        // Add state_count to the JSON object
-        cJSON_AddNumberToObject(json_root, "state_count", state_count);
+        // // Add state_count to the JSON object
+        // cJSON_AddNumberToObject(json_root, "state_count", state_count);
 
-        // New functionality: Add selected seed content to JSON object
+        // New functionality: Add selected seed content and its state sequence to JSON object
         if (queue_cur) {
+            // Add selected seed content
             FILE *seed_file = fopen((char *)queue_cur->fname, "rb");
             if (seed_file) {
                 fseek(seed_file, 0, SEEK_END);
@@ -860,6 +861,13 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
             } else {
                 PFATAL("Unable to open seed file: %s", queue_cur->fname);
             }
+
+            // Add selected seed state sequence
+            cJSON *json_selected_state_sequence = cJSON_CreateArray();
+            for (i = 0; i < queue_cur->state_count; i++) {
+                cJSON_AddItemToArray(json_selected_state_sequence, cJSON_CreateNumber(queue_cur->state_sequence[i]));
+            }
+            cJSON_AddItemToObject(json_root, "selected_state_sequence", json_selected_state_sequence);
         }
 
         u8 *json_output = cJSON_Print(json_root);
