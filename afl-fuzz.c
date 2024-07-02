@@ -9416,6 +9416,56 @@ int main(int argc, char** argv) {
         }
       }
 
+      // new function 记录 selected_seed 的内容到 JSON 文件
+        if (selected_seed) {
+            // Add selected seed content
+            FILE *seed_file = fopen((char *)selected_seed->fname, "rb");
+            if (seed_file) {
+                fseek(seed_file, 0, SEEK_END);
+                long seed_len = ftell(seed_file);
+                fseek(seed_file, 0, SEEK_SET);
+                char *seed_content = (char *)malloc(seed_len + 1);
+                if (seed_content) {
+                    fread(seed_content, 1, seed_len, seed_file);
+                    seed_content[seed_len] = '\0';
+                    
+                    // Open existing JSON file and update it
+                    u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
+                    FILE *json_file = fopen(json_fname, "r+");
+                    if (json_file) {
+                        fseek(json_file, 0, SEEK_END);
+                        long json_len = ftell(json_file);
+                        fseek(json_file, 0, SEEK_SET);
+                        char *json_content = (char *)malloc(json_len + 1);
+                        if (json_content) {
+                            fread(json_content, 1, json_len, json_file);
+                            json_content[json_len] = '\0';
+                            cJSON *json_root = cJSON_Parse(json_content);
+                            if (!json_root) {
+                                json_root = cJSON_CreateObject();
+                            }
+                            cJSON_AddStringToObject(json_root, "selected_seed_main", seed_content);
+
+                            u8 *json_output = cJSON_Print(json_root);
+                            freopen(json_fname, "w", json_file);
+                            fprintf(json_file, "%s\n", json_output);
+                            free(json_output);
+                            cJSON_Delete(json_root);
+                            free(json_content);
+                        }
+                        fclose(json_file);
+                    } else {
+                        PFATAL("Unable to open %s", json_fname);
+                    }
+                    free(seed_content);
+                    ck_free(json_fname);
+                }
+                fclose(seed_file);
+            } else {
+                PFATAL("Unable to open seed file: %s", selected_seed->fname);
+            }
+        }
+
       skipped_fuzz = fuzz_one(use_argv);
 
       if (!stop_soon && sync_id && !skipped_fuzz) {
