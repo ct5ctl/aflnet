@@ -841,6 +841,8 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
 
         // // Add state_count to the JSON object
         // cJSON_AddNumberToObject(json_root, "state_count", state_count);
+        // Add target_state_id to the JSON object
+        cJSON_AddNumberToObject(json_root, "target_state", target_state_id);
 
         // New functionality: Add selected seed content and its state sequence to JSON object
         if (queue_cur) {
@@ -862,12 +864,12 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
                 PFATAL("Unable to open seed file: %s", queue_cur->fname);
             }
 
-            // Add selected seed state sequence
-            cJSON *json_selected_state_sequence = cJSON_CreateArray();
-            for (i = 0; i < queue_cur->state_count; i++) {
-                cJSON_AddItemToArray(json_selected_state_sequence, cJSON_CreateNumber(queue_cur->state_sequence[i]));
-            }
-            cJSON_AddItemToObject(json_root, "selected_state_sequence", json_selected_state_sequence);
+            // // Add selected seed state sequence
+            // cJSON *json_selected_state_sequence = cJSON_CreateArray();
+            // for (i = 0; i < queue_cur->state_count; i++) {
+            //     cJSON_AddItemToArray(json_selected_state_sequence, cJSON_CreateNumber(queue_cur->state_sequence[i]));
+            // }
+            // cJSON_AddItemToObject(json_root, "selected_state_sequence", json_selected_state_sequence);
         }
 
         u8 *json_output = cJSON_Print(json_root);
