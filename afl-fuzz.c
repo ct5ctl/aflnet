@@ -819,11 +819,11 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
 
     if(dry_run == 0)
     {
-        u8 *temp_str = state_sequence_to_string(state_sequence, state_count);
-        u8 *fname = alloc_printf("%s/cc-replayable-new-ipsm-paths/id:%s:%s", out_dir, temp_str, dry_run ? basename(q->fname) : "new");
-        save_kl_messages_to_file(kl_messages, fname, 1, messages_sent);
-        ck_free(temp_str);
-        ck_free(fname);
+        // u8 *temp_str = state_sequence_to_string(state_sequence, state_count);
+        // u8 *fname = alloc_printf("%s/cc-replayable-new-ipsm-paths/id:%s:%s", out_dir, temp_str, dry_run ? basename(q->fname) : "new");
+        // save_kl_messages_to_file(kl_messages, fname, 1, messages_sent);
+        // ck_free(temp_str);
+        // ck_free(fname);
         // Ensure the directory exists
         u8 *json_dir = alloc_printf("%s/new-seeds-interesting", out_dir);
         ensure_directory_exists(json_dir);
@@ -842,25 +842,25 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
         // Add state_count to the JSON object
         cJSON_AddNumberToObject(json_root, "state_count", state_count);
 
-        // // New functionality: Add selected seed content to JSON object
-        // if (queue_cur) {
-        //     FILE *seed_file = fopen((char *)queue_cur->fname, "rb");
-        //     if (seed_file) {
-        //         fseek(seed_file, 0, SEEK_END);
-        //         long seed_len = ftell(seed_file);
-        //         fseek(seed_file, 0, SEEK_SET);
-        //         char *seed_content = (char *)malloc(seed_len + 1);
-        //         if (seed_content) {
-        //             fread(seed_content, 1, seed_len, seed_file);
-        //             seed_content[seed_len] = '\0';
-        //             cJSON_AddStringToObject(json_root, "selected_seed", seed_content);
-        //             free(seed_content);
-        //         }
-        //         fclose(seed_file);
-        //     } else {
-        //         PFATAL("Unable to open seed file: %s", queue_cur->fname);
-        //     }
-        // }
+        // New functionality: Add selected seed content to JSON object
+        if (queue_cur) {
+            FILE *seed_file = fopen((char *)queue_cur->fname, "rb");
+            if (seed_file) {
+                fseek(seed_file, 0, SEEK_END);
+                long seed_len = ftell(seed_file);
+                fseek(seed_file, 0, SEEK_SET);
+                char *seed_content = (char *)malloc(seed_len + 1);
+                if (seed_content) {
+                    fread(seed_content, 1, seed_len, seed_file);
+                    seed_content[seed_len] = '\0';
+                    cJSON_AddStringToObject(json_root, "selected_seed", seed_content);
+                    free(seed_content);
+                }
+                fclose(seed_file);
+            } else {
+                PFATAL("Unable to open seed file: %s", queue_cur->fname);
+            }
+        }
 
         u8 *json_output = cJSON_Print(json_root);
         u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
