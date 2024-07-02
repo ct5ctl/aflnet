@@ -817,36 +817,122 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
     ck_free(temp_str);
     ck_free(fname);
 
-    if(dry_run == 0)
+    // if(dry_run == 0)
+    // {
+    //     // u8 *temp_str = state_sequence_to_string(state_sequence, state_count);
+    //     // u8 *fname = alloc_printf("%s/cc-replayable-new-ipsm-paths/id:%s:%s", out_dir, temp_str, dry_run ? basename(q->fname) : "new");
+    //     // save_kl_messages_to_file(kl_messages, fname, 1, messages_sent);
+    //     // ck_free(temp_str);
+    //     // ck_free(fname);
+    //     // Ensure the directory exists
+    //     u8 *json_dir = alloc_printf("%s/new-seeds-interesting", out_dir);
+    //     ensure_directory_exists(json_dir);
+    //     ck_free(json_dir);
+
+    //     // New functionality: Save interesting seeds to output.json
+    //     char *kl_messages_str = kl_messages_to_string(kl_messages);
+    //     cJSON *json_root = cJSON_CreateObject();
+    //     cJSON_AddStringToObject(json_root, "selected_seed", kl_messages_str);
+    //     cJSON *json_state_sequence = cJSON_CreateArray();
+    //     for (i = 0; i < state_count; i++) {
+    //         cJSON_AddItemToArray(json_state_sequence, cJSON_CreateNumber(state_sequence[i]));
+    //     }
+    //     cJSON_AddItemToObject(json_root, "state_sequence", json_state_sequence);
+
+    //     // // Add state_count to the JSON object
+    //     // cJSON_AddNumberToObject(json_root, "state_count", state_count);
+    //     // Add target_state_id to the JSON object
+    //     cJSON_AddNumberToObject(json_root, "target_state", target_state_id);
+
+    //     // New functionality: Add selected seed content and its state sequence to JSON object
+    //     if (queue_cur) {
+    //         // Add selected seed content
+    //         FILE *seed_file = fopen((char *)queue_cur->fname, "rb");
+    //         if (seed_file) {
+    //             fseek(seed_file, 0, SEEK_END);
+    //             long seed_len = ftell(seed_file);
+    //             fseek(seed_file, 0, SEEK_SET);
+    //             char *seed_content = (char *)malloc(seed_len + 1);
+    //             if (seed_content) {
+    //                 fread(seed_content, 1, seed_len, seed_file);
+    //                 seed_content[seed_len] = '\0';
+    //                 cJSON_AddStringToObject(json_root, "selected_seed", seed_content);
+    //                 free(seed_content);
+    //             }
+    //             fclose(seed_file);
+    //         } else {
+    //             PFATAL("Unable to open seed file: %s", queue_cur->fname);
+    //         }
+
+    //         // // Add selected seed state sequence
+    //         // cJSON *json_selected_state_sequence = cJSON_CreateArray();
+    //         // for (i = 0; i < queue_cur->state_count; i++) {
+    //         //     cJSON_AddItemToArray(json_selected_state_sequence, cJSON_CreateNumber(queue_cur->state_sequence[i]));
+    //         // }
+    //         // cJSON_AddItemToObject(json_root, "selected_state_sequence", json_selected_state_sequence);
+    //     }
+
+    //     u8 *json_output = cJSON_Print(json_root);
+    //     u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
+    //     FILE *json_file = fopen(json_fname, "a");
+    //     if (json_file) {
+    //         fprintf(json_file, "%s\n", json_output);
+    //         fclose(json_file);
+    //     } else {
+    //         PFATAL("Unable to create %s", json_fname);
+    //     }
+    //     fprintf(stderr, "Debug: Freeing memory at %p\n", json_output);
+    //     free(json_output);  // 不能用ck_free，因为cJSON_Print返回的是malloc的内存
+    //     fprintf(stderr, "Debug: Memory freed\n");
+    //     ck_free(json_fname);
+    //     ck_free(kl_messages_str);
+    //     cJSON_Delete(json_root);
+    // }
+    // for test
+    if (dry_run == 0) 
     {
-        // u8 *temp_str = state_sequence_to_string(state_sequence, state_count);
-        // u8 *fname = alloc_printf("%s/cc-replayable-new-ipsm-paths/id:%s:%s", out_dir, temp_str, dry_run ? basename(q->fname) : "new");
-        // save_kl_messages_to_file(kl_messages, fname, 1, messages_sent);
-        // ck_free(temp_str);
-        // ck_free(fname);
         // Ensure the directory exists
         u8 *json_dir = alloc_printf("%s/new-seeds-interesting", out_dir);
         ensure_directory_exists(json_dir);
         ck_free(json_dir);
 
-        // New functionality: Save interesting seeds to output.json
+        // Read existing JSON file or create new JSON object
+        u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
+        FILE *json_file = fopen(json_fname, "r+");
+        if (!json_file) {
+            json_file = fopen(json_fname, "w");
+        }
+        cJSON *json_root = NULL;
+        if (json_file) {
+            fseek(json_file, 0, SEEK_END);
+            long json_len = ftell(json_file);
+            fseek(json_file, 0, SEEK_SET);
+            char *json_content = (char *)malloc(json_len + 1);
+            if (json_content) {
+                fread(json_content, 1, json_len, json_file);
+                json_content[json_len] = '\0';
+                json_root = cJSON_Parse(json_content);
+                if (!json_root) {
+                    json_root = cJSON_CreateObject();
+                }
+                free(json_content);
+            }
+        } else {
+            PFATAL("Unable to open %s", json_fname);
+        }
+
+        // New functionality: Save interesting seeds to JSON object
         char *kl_messages_str = kl_messages_to_string(kl_messages);
-        cJSON *json_root = cJSON_CreateObject();
         cJSON_AddStringToObject(json_root, "selected_seed", kl_messages_str);
         cJSON *json_state_sequence = cJSON_CreateArray();
         for (i = 0; i < state_count; i++) {
             cJSON_AddItemToArray(json_state_sequence, cJSON_CreateNumber(state_sequence[i]));
         }
         cJSON_AddItemToObject(json_root, "state_sequence", json_state_sequence);
-
-        // // Add state_count to the JSON object
-        // cJSON_AddNumberToObject(json_root, "state_count", state_count);
-        // Add target_state_id to the JSON object
         cJSON_AddNumberToObject(json_root, "target_state", target_state_id);
 
-        // New functionality: Add selected seed content and its state sequence to JSON object
+        // Add selected seed content and its state sequence to JSON object
         if (queue_cur) {
-            // Add selected seed content
             FILE *seed_file = fopen((char *)queue_cur->fname, "rb");
             if (seed_file) {
                 fseek(seed_file, 0, SEEK_END);
@@ -863,27 +949,18 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
             } else {
                 PFATAL("Unable to open seed file: %s", queue_cur->fname);
             }
-
-            // // Add selected seed state sequence
-            // cJSON *json_selected_state_sequence = cJSON_CreateArray();
-            // for (i = 0; i < queue_cur->state_count; i++) {
-            //     cJSON_AddItemToArray(json_selected_state_sequence, cJSON_CreateNumber(queue_cur->state_sequence[i]));
-            // }
-            // cJSON_AddItemToObject(json_root, "selected_state_sequence", json_selected_state_sequence);
         }
 
+        // Write updated JSON object back to file
         u8 *json_output = cJSON_Print(json_root);
-        u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
-        FILE *json_file = fopen(json_fname, "a");
+        freopen(json_fname, "w", json_file);
         if (json_file) {
             fprintf(json_file, "%s\n", json_output);
             fclose(json_file);
         } else {
-            PFATAL("Unable to create %s", json_fname);
+            PFATAL("Unable to open %s", json_fname);
         }
-        fprintf(stderr, "Debug: Freeing memory at %p\n", json_output);
-        free(json_output);  // 不能用ck_free，因为cJSON_Print返回的是malloc的内存
-        fprintf(stderr, "Debug: Memory freed\n");
+        free(json_output);
         ck_free(json_fname);
         ck_free(kl_messages_str);
         cJSON_Delete(json_root);
@@ -9417,7 +9494,38 @@ int main(int argc, char** argv) {
       }
 
       // new function 记录 selected_seed 的内容到 JSON 文件
-      if (selected_seed) {
+      if (selected_seed) 
+      {
+          // Ensure the directory exists
+          u8 *json_dir = alloc_printf("%s/new-seeds-interesting", out_dir);
+          ensure_directory_exists(json_dir);
+          ck_free(json_dir);
+
+          // Read existing JSON file or create new JSON object
+          u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
+          FILE *json_file = fopen(json_fname, "r+");
+          if (!json_file) {
+              json_file = fopen(json_fname, "w");
+          }
+          cJSON *json_root = NULL;
+          if (json_file) {
+              fseek(json_file, 0, SEEK_END);
+              long json_len = ftell(json_file);
+              fseek(json_file, 0, SEEK_SET);
+              char *json_content = (char *)malloc(json_len + 1);
+              if (json_content) {
+                  fread(json_content, 1, json_len, json_file);
+                  json_content[json_len] = '\0';
+                  json_root = cJSON_Parse(json_content);
+                  if (!json_root) {
+                      json_root = cJSON_CreateObject();
+                  }
+                  free(json_content);
+              }
+          } else {
+              PFATAL("Unable to open %s", json_fname);
+          }
+
           // Add selected seed content
           FILE *seed_file = fopen((char *)selected_seed->fname, "rb");
           if (seed_file) {
@@ -9428,51 +9536,26 @@ int main(int argc, char** argv) {
               if (seed_content) {
                   fread(seed_content, 1, seed_len, seed_file);
                   seed_content[seed_len] = '\0';
-
-                  // Ensure the directory exists
-                  u8 *json_dir = alloc_printf("%s/new-seeds-interesting", out_dir);
-                  ensure_directory_exists(json_dir);
-                  ck_free(json_dir);
-                  
-                  // Open existing JSON file and update it
-                  u8 *json_fname = alloc_printf("%s/new-seeds-interesting/output.json", out_dir);
-                  FILE *json_file = fopen(json_fname, "r+");
-                  if (!json_file) {
-                      json_file = fopen(json_fname, "w");
-                  }
-                  if (json_file) {
-                      fseek(json_file, 0, SEEK_END);
-                      long json_len = ftell(json_file);
-                      fseek(json_file, 0, SEEK_SET);
-                      char *json_content = (char *)malloc(json_len + 1);
-                      if (json_content) {
-                          fread(json_content, 1, json_len, json_file);
-                          json_content[json_len] = '\0';
-                          cJSON *json_root = cJSON_Parse(json_content);
-                          if (!json_root) {
-                              json_root = cJSON_CreateObject();
-                          }
-                          cJSON_AddStringToObject(json_root, "selected_seed_main", seed_content);
-                          cJSON_AddNumberToObject(json_root, "target_state", target_state_id);
-
-                          u8 *json_output = cJSON_Print(json_root);
-                          freopen(json_fname, "w", json_file);
-                          fprintf(json_file, "%s\n", json_output);
-                          free(json_output);
-                          cJSON_Delete(json_root);
-                          free(json_content);
-                      }
-                      fclose(json_file);
-                  } else {
-                      PFATAL("Unable to open %s", json_fname);
-                  }
+                  cJSON_AddStringToObject(json_root, "selected_seed_main", seed_content);
                   free(seed_content);
-                  ck_free(json_fname);
               }
               fclose(seed_file);
           } else {
               PFATAL("Unable to open seed file: %s", selected_seed->fname);
           }
+
+          // Write updated JSON object back to file
+          u8 *json_output = cJSON_Print(json_root);
+          freopen(json_fname, "w", json_file);
+          if (json_file) {
+              fprintf(json_file, "%s\n", json_output);
+              fclose(json_file);
+          } else {
+              PFATAL("Unable to open %s", json_fname);
+          }
+          free(json_output);
+          ck_free(json_fname);
+          cJSON_Delete(json_root);
       }
 
       skipped_fuzz = fuzz_one(use_argv);
