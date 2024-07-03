@@ -923,7 +923,7 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
 
         // New functionality: Save interesting seeds to JSON object
         char *kl_messages_str = kl_messages_to_string(kl_messages);
-        cJSON_AddStringToObject(json_root, "selected_seed", kl_messages_str);
+        cJSON_AddStringToObject(json_root, "kl_messages", kl_messages_str);
         cJSON *json_state_sequence = cJSON_CreateArray();
         for (i = 0; i < state_count; i++) {
             cJSON_AddItemToArray(json_state_sequence, cJSON_CreateNumber(state_sequence[i]));
