@@ -75,6 +75,7 @@
 
 //cc
 #include "afl-fuzz-global.h"
+#include "afl-fuzz-mutation-rule.h"
 
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined (__OpenBSD__)
 #  include <sys/sysctl.h>
