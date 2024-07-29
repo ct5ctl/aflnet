@@ -73,9 +73,6 @@
 #include <graphviz/gvc.h>
 #include <math.h>
 
-//cc
-#include "afl-fuzz-global.h"
-
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined (__OpenBSD__)
 #  include <sys/sysctl.h>
 #endif /* __APPLE__ || __FreeBSD__ || __OpenBSD__ */
@@ -207,12 +204,11 @@ EXP_ST u64 total_crashes,             /* Total number of crashes          */
 
 static u32 subseq_tmouts;             /* Number of timeouts in a row      */
 
-//cc
-// static u8 *stage_name = "init",       /* Name of the current fuzz stage   */
-//           *stage_short,               /* Short stage name                 */
-//           *syncing_party;             /* Currently syncing with...        */
+static u8 *stage_name = "init",       /* Name of the current fuzz stage   */
+          *stage_short,               /* Short stage name                 */
+          *syncing_party;             /* Currently syncing with...        */
 
-// static s32 stage_cur, stage_max;      /* Stage progression                */
+static s32 stage_cur, stage_max;      /* Stage progression                */
 static s32 splicing_with = -1;        /* Splicing with which test case?   */
 
 static u32 master_id, master_max;     /* Master instance job splitting    */
@@ -222,11 +218,10 @@ static u32 syncing_case;              /* Syncing with case #...           */
 static s32 stage_cur_byte,            /* Byte offset of current stage op  */
            stage_cur_val;             /* Value used for stage op          */
 
-//cc
-// static u8  stage_val_type;            /* Value type (STAGE_VAL_*)         */
+static u8  stage_val_type;            /* Value type (STAGE_VAL_*)         */
 
-// static u64 stage_finds[32],           /* Patterns found per fuzz stage    */
-//            stage_cycles[32];          /* Execs per fuzz stage             */
+static u64 stage_finds[32],           /* Patterns found per fuzz stage    */
+           stage_cycles[32];          /* Execs per fuzz stage             */
 
 static u32 rand_cnt;                  /* Random number counter            */
 
@@ -814,7 +809,7 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
 
   q->unique_state_count = get_unique_state_count(state_sequence, state_count);
 
-  if (is_state_sequence_interesting(state_sequence, state_count)) { 
+  if (is_state_sequence_interesting(state_sequence, state_count)) {
     //Save the current kl_messages to a file which can be used to replay the newly discovered paths on the ipsm
     u8 *temp_str = state_sequence_to_string(state_sequence, state_count);
     u8 *fname = alloc_printf("%s/replayable-new-ipsm-paths/id:%s:%s", out_dir, temp_str, dry_run ? basename(q->fname) : "new");
@@ -1262,7 +1257,7 @@ int send_over_network()
   kliter_t(lms) *it;
   messages_sent = 0;
 
-  for (it = kl_begin(kl_messages); it != kl_end(kl_messages); it = kl_next(it)) { // 按顺序发送整个kl_messages
+  for (it = kl_begin(kl_messages); it != kl_end(kl_messages); it = kl_next(it)) {
     n = net_send(sockfd, timeout, kl_val(it)->mdata, kl_val(it)->msize);
     messages_sent++;
 
@@ -3340,8 +3335,7 @@ EXP_ST void init_forkserver(char** argv) {
 
 
 /* Execute target application, monitoring for timeouts. Return status
-   information. The called program will update trace_bits[]. 
-   这个函数的主要作用是执行目标应用程序，监控超时，返回状态信息，然后利用调用的程序更新trace_bits[].*/
+   information. The called program will update trace_bits[]. */
 
 static u8 run_target(char** argv, u32 timeout) {
 
@@ -3484,7 +3478,7 @@ static u8 run_target(char** argv, u32 timeout) {
 
   if (dumb_mode == 1 || no_forkserver) {
     if (use_net) send_over_network();
-    if (waitpid(child_pid, &status, 0) <= 0) PFATAL("waitpid() failed"); //由于dumb_mode模式或者no_forkserver无法得知目标服务器的状态，所以这里需要通过一个waitpid函数来获取子进程状态，从而确认目标服务器是否存活。
+    if (waitpid(child_pid, &status, 0) <= 0) PFATAL("waitpid() failed");
 
   } else {
     if (use_net) send_over_network();
@@ -3523,7 +3517,7 @@ static u8 run_target(char** argv, u32 timeout) {
 #ifdef WORD_SIZE_64
   classify_counts((u64*)trace_bits);
 #else
-  classify_counts((u32*)trace_bits); //对trace_bits共享内存记录的路径执行次数进行分类，是一个对稀疏位图进行优化的操作
+  classify_counts((u32*)trace_bits);
 #endif /* ^WORD_SIZE_64 */
 
   prev_timed_out = child_timed_out;
@@ -3623,9 +3617,9 @@ static u8 calibrate_case(char** argv, struct queue_entry* q, u8* use_mem,
 
     if (!first_run && !(stage_cur % stats_update_freq)) show_stats();
 
-    write_to_testcase(use_mem, q->len); //这个函数的作用是使用ckwirte的方法，把testcase的内容写入out/.cur_input中。但是因为AFLnet通过网络传输testcase，所以不需要这个函数。
+    write_to_testcase(use_mem, q->len);
 
-    fault = run_target(argv, use_tmout); //run
+    fault = run_target(argv, use_tmout);
 
     /* stop_soon is set by the handler for Ctrl+C. When it's pressed,
        we want to bail out quickly. */
@@ -3688,7 +3682,7 @@ static u8 calibrate_case(char** argv, struct queue_entry* q, u8* use_mem,
   total_bitmap_size += q->bitmap_size;
   total_bitmap_entries++;
 
-  update_bitm ap_score(q);
+  update_bitmap_score(q);
 
   /* If this case didn't result in new output from the instrumentation, tell
      parent. This is a non-critical problem, but something to warn the user
@@ -5610,14 +5604,14 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   // update kl_messages linked list
   u32 i;
   kliter_t(lms) *prev_last_message, *cur_last_message;
-  prev_last_message = get_last_message(kl_messages); //获取链接列表中的最后一条信息。由于 kl_messages->tail 指向一个空项，我们不能用它来获取最后一条信息
+  prev_last_message = get_last_message(kl_messages);
 
-  // limit the messages based on max_seed_region_count to reduce overhead如果超出max_seed_region_count限制，则将剩余的所有region合并成一个message
+  // limit the #messages based on max_seed_region_count to reduce overhead
   for (i = 0; i < region_count; i++) {
     u32 len;
     //Identify region size
     if (i == max_seed_region_count) {
-      len = regions[region_count - 1].end_byte - regions[i].start_byte + 1; //如果超出max_seed_region_count限制，则将剩余的所有region合并成一个message
+      len = regions[region_count - 1].end_byte - regions[i].start_byte + 1;
     } else {
       len = regions[i].end_byte - regions[i].start_byte + 1;
     }
@@ -5630,12 +5624,12 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
     memcpy(m->mdata, &out_buf[regions[i].start_byte], len);
 
     //Insert the message to the linked list
-    *kl_pushp(lms, kl_messages) = m;  //将m插入到kl_messages的尾部
+    *kl_pushp(lms, kl_messages) = m;
 
     //Update M2_next in case it points to the tail (M3 is empty)
     //because the tail in klist is updated once a new entry is pushed into it
     //in fact, the old tail storage is used to store the newly added entry and a new tail is created
-    if (M2_next->next == kl_end(kl_messages)) { 
+    if (M2_next->next == kl_end(kl_messages)) {
       M2_next = kl_end(kl_messages);
     }
 
@@ -5654,7 +5648,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
     kl_begin(kl_messages) = kl_next(prev_last_message);
     kl_next(cur_last_message) = M2_next;
     kl_next(prev_last_message) = kl_end(kl_messages);
-  } else {    // 这里相当于把M2_prev和prev_last_message之间的所有message（老M2）都删除了
+  } else {
     old_M2_start = kl_next(M2_prev);
     kl_next(M2_prev) = kl_next(prev_last_message);
     kl_next(cur_last_message) = M2_next;
@@ -6015,6 +6009,7 @@ static u8 could_be_interest(u32 old_val, u32 new_val, u8 blen, u8 check_le) {
 
 }
 
+
 /* Take the current entry from the queue, fuzz it for a while. This
    function is a tad too long... returns 0 if fuzzed successfully, 1 if
    skipped or bailed out. */
@@ -6096,7 +6091,7 @@ AFLNET_REGIONS_SELECTION:;
     u32 total_region = queue_cur->region_count;
     if (total_region == 0) PFATAL("0 region found for %s", queue_cur->fname);
 
-    if (target_state_id == 0) { //没有M1，全是M2
+    if (target_state_id == 0) {
       //No prefix subsequence (M1 is empty)
       M2_start_region_ID = 0;
       M2_region_count = 0;
@@ -6104,7 +6099,7 @@ AFLNET_REGIONS_SELECTION:;
       //To compute M2_region_count, we identify the first region which has a different annotation
       //Now we quickly compare the state count, we could make it more fine grained by comparing the exact response codes
       for(i = 0; i < queue_cur->region_count ; i++) {
-        if (queue_cur->regions[i].state_count != queue_cur->regions[0].state_count) break;    //M2中的所有region的state_count是一样的，都在同一状态下 
+        if (queue_cur->regions[i].state_count != queue_cur->regions[0].state_count) break;
         M2_region_count++;
       }
     } else {
@@ -6147,7 +6142,7 @@ AFLNET_REGIONS_SELECTION:;
   /* Construct the kl_messages linked list and identify boundary pointers (M2_prev and M2_next) */
   kl_messages = construct_kl_messages(queue_cur->fname, queue_cur->regions, queue_cur->region_count);
 
-  kliter_t(lms) *it; //kl_messages iterator，用于遍历kl_messages
+  kliter_t(lms) *it;
 
   M2_prev = NULL; //M2前指针指向M1的最后一条消息，后指针指向M3的第一条消息,M2_prev和M2_next之间为M2子消息序列
   M2_next = kl_end(kl_messages);
@@ -6172,7 +6167,7 @@ AFLNET_REGIONS_SELECTION:;
   }
 
   u32 in_buf_size = 0;
-  while (it != M2_next) { //遍历M2的所有消息，将其拼接到in_buf中
+  while (it != M2_next) {
     in_buf = (u8 *) ck_realloc (in_buf, in_buf_size + kl_val(it)->msize);
     if (!in_buf) PFATAL("AFLNet cannot allocate memory for in_buf");
     //Retrieve data from kl_messages to populate the in_buf
@@ -6184,7 +6179,7 @@ AFLNET_REGIONS_SELECTION:;
 
   orig_in = in_buf;
 
-  out_buf = ck_alloc_nozero(in_buf_size); //out_buf是in_buf的一个拷贝,存储的是M2的消息序列
+  out_buf = ck_alloc_nozero(in_buf_size);
   memcpy(out_buf, in_buf, in_buf_size);
 
   //Update len to keep the correct size of the buffer being mutated
@@ -6198,10 +6193,6 @@ AFLNET_REGIONS_SELECTION:;
    *********************/
 
   orig_perf = perf_score = calculate_score(queue_cur);//调用calculate_score来计算当前种子的perf_score，该变量是用来衡量后续将种子用于随机破坏性变异的程度（次数）。
-  
-  //cc
-  perform_mutation_and_fuzzing(argv, out_buf, len, eff_map, &orig_hit_cnt, &new_hit_cnt);
-  //----
 
   /* Skip right away if -d is given, if we have done deterministic fuzzing on
      this entry ourselves (was_fuzzed), or if it has gone through deterministic
@@ -6240,15 +6231,15 @@ AFLNET_REGIONS_SELECTION:;
 
   prev_cksum = queue_cur->exec_cksum;
 
-  for (stage_cur = 0; stage_cur < stage_max; stage_cur++) { // 遍历m2的每一位，将每一位的值取反，然后调用common_fuzz_stuff函数进行fuzzing
+  for (stage_cur = 0; stage_cur < stage_max; stage_cur++) {
 
     stage_cur_byte = stage_cur >> 3;
 
     FLIP_BIT(out_buf, stage_cur);
 
-    if (common_fuzz_stuff(argv, out_buf, len)) goto abandon_entry;  //若连续多次超时或者skip_requested，则跳转到abandon_entry（即放弃当前种子）
+    if (common_fuzz_stuff(argv, out_buf, len)) goto abandon_entry;
 
-    FLIP_BIT(out_buf, stage_cur); // 为了保证下一次循环的正确性，需要将out_buf还原
+    FLIP_BIT(out_buf, stage_cur);
 
     /* While flipping the least significant bit in every byte, pull of an extra
        trick to detect possible syntax tokens. In essence, the idea is that if
@@ -6277,7 +6268,7 @@ AFLNET_REGIONS_SELECTION:;
 
       */
 
-    if (!dumb_mode && (stage_cur & 7) == 7) { // 该段作用是猜解token，保证关键字符串不被破坏，比如TCP，改变为TAP，肯定会造成错误
+    if (!dumb_mode && (stage_cur & 7) == 7) {
 
       u32 cksum = hash32(trace_bits, MAP_SIZE, HASH_CONST);
 
@@ -7834,7 +7825,7 @@ abandon_entry:
   return ret_val;
 
 #undef FLIP_BIT
-  //----
+
 }
 
 
