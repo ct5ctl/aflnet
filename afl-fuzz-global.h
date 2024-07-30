@@ -52,18 +52,18 @@
 
 #include <sys/types.h>
 
-static u8 *stage_name = "init",       /* Name of the current fuzz stage   */
+extern u8 *stage_name,       /* Name of the current fuzz stage   */
           *stage_short,               /* Short stage name                 */
           *syncing_party;             /* Currently syncing with...        */
 
-static s32 stage_cur, stage_max;      /* Stage progression                */
+extern s32 stage_cur, stage_max;      /* Stage progression                */
 
-static u8  stage_val_type;            /* Value type (STAGE_VAL_*)         */
+extern u8  stage_val_type;            /* Value type (STAGE_VAL_*)         */
 
-static u64 stage_finds[32],           /* Patterns found per fuzz stage    */
+extern u64 stage_finds[32],           /* Patterns found per fuzz stage    */
            stage_cycles[32];          /* Execs per fuzz stage             */
 
-enum {
+extern enum {
   /* 00 */ STAGE_FLIP1,
   /* 01 */ STAGE_FLIP2,
   /* 02 */ STAGE_FLIP4,
@@ -83,30 +83,30 @@ enum {
   /* 16 */ STAGE_SPLICE
 };
 
-EXP_ST u8  skip_deterministic,        /* Skip deterministic stages?       */
-           force_deterministic,       /* Force deterministic stages?      */
-           use_splicing,              /* Recombine input files?           */
-           dumb_mode,                 /* Run in non-instrumented mode?    */
-           score_changed,             /* Scoring for favorites changed?   */
-           kill_signal,               /* Signal that killed the child     */
-           resuming_fuzz,             /* Resuming an older fuzzing job?   */
-           timeout_given,             /* Specific timeout given?          */
-           not_on_tty,                /* stdout is not a tty              */
-           term_too_small,            /* terminal dimensions too small    */
-           uses_asan,                 /* Target uses ASAN?                */
-           no_forkserver,             /* Disable forkserver?              */
-           crash_mode,                /* Crash mode! Yeah!                */
-           in_place_resume,           /* Attempt in-place resume?         */
-           auto_changed,              /* Auto-generated tokens changed?   */
-           no_cpu_meter_red,          /* Feng shui on the status screen   */
-           no_arith,                  /* Skip most arithmetic ops         */
-           shuffle_queue,             /* Shuffle input queue?             */
-           bitmap_changed = 1,        /* Time to update bitmap?           */
-           qemu_mode,                 /* Running in QEMU mode?            */
-           skip_requested,            /* Skip request, via SIGUSR1        */
-           run_over10m,               /* Run time over 10 minutes?        */
-           persistent_mode,           /* Running in persistent mode?      */
-           deferred_mode,             /* Deferred forkserver mode?        */
-           fast_cal;                  /* Try to calibrate faster?         */
+// EXP_ST u8  skip_deterministic,        /* Skip deterministic stages?       */
+//            force_deterministic,       /* Force deterministic stages?      */
+//            use_splicing,              /* Recombine input files?           */
+//            dumb_mode,                 /* Run in non-instrumented mode?    */
+//            score_changed,             /* Scoring for favorites changed?   */
+//            kill_signal,               /* Signal that killed the child     */
+//            resuming_fuzz,             /* Resuming an older fuzzing job?   */
+//            timeout_given,             /* Specific timeout given?          */
+//            not_on_tty,                /* stdout is not a tty              */
+//            term_too_small,            /* terminal dimensions too small    */
+//            uses_asan,                 /* Target uses ASAN?                */
+//            no_forkserver,             /* Disable forkserver?              */
+//            crash_mode,                /* Crash mode! Yeah!                */
+//            in_place_resume,           /* Attempt in-place resume?         */
+//            auto_changed,              /* Auto-generated tokens changed?   */
+//            no_cpu_meter_red,          /* Feng shui on the status screen   */
+//            no_arith,                  /* Skip most arithmetic ops         */
+//            shuffle_queue,             /* Shuffle input queue?             */
+//            bitmap_changed = 1,        /* Time to update bitmap?           */
+//            qemu_mode,                 /* Running in QEMU mode?            */
+//            skip_requested,            /* Skip request, via SIGUSR1        */
+//            run_over10m,               /* Run time over 10 minutes?        */
+//            persistent_mode,           /* Running in persistent mode?      */
+//            deferred_mode,             /* Deferred forkserver mode?        */
+//            fast_cal;                  /* Try to calibrate faster?         */
 
 #endif
