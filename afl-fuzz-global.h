@@ -63,4 +63,50 @@ static u8  stage_val_type;            /* Value type (STAGE_VAL_*)         */
 static u64 stage_finds[32],           /* Patterns found per fuzz stage    */
            stage_cycles[32];          /* Execs per fuzz stage             */
 
+enum {
+  /* 00 */ STAGE_FLIP1,
+  /* 01 */ STAGE_FLIP2,
+  /* 02 */ STAGE_FLIP4,
+  /* 03 */ STAGE_FLIP8,
+  /* 04 */ STAGE_FLIP16,
+  /* 05 */ STAGE_FLIP32,
+  /* 06 */ STAGE_ARITH8,
+  /* 07 */ STAGE_ARITH16,
+  /* 08 */ STAGE_ARITH32,
+  /* 09 */ STAGE_INTEREST8,
+  /* 10 */ STAGE_INTEREST16,
+  /* 11 */ STAGE_INTEREST32,
+  /* 12 */ STAGE_EXTRAS_UO,
+  /* 13 */ STAGE_EXTRAS_UI,
+  /* 14 */ STAGE_EXTRAS_AO,
+  /* 15 */ STAGE_HAVOC,
+  /* 16 */ STAGE_SPLICE
+};
+
+EXP_ST u8  skip_deterministic,        /* Skip deterministic stages?       */
+           force_deterministic,       /* Force deterministic stages?      */
+           use_splicing,              /* Recombine input files?           */
+           dumb_mode,                 /* Run in non-instrumented mode?    */
+           score_changed,             /* Scoring for favorites changed?   */
+           kill_signal,               /* Signal that killed the child     */
+           resuming_fuzz,             /* Resuming an older fuzzing job?   */
+           timeout_given,             /* Specific timeout given?          */
+           not_on_tty,                /* stdout is not a tty              */
+           term_too_small,            /* terminal dimensions too small    */
+           uses_asan,                 /* Target uses ASAN?                */
+           no_forkserver,             /* Disable forkserver?              */
+           crash_mode,                /* Crash mode! Yeah!                */
+           in_place_resume,           /* Attempt in-place resume?         */
+           auto_changed,              /* Auto-generated tokens changed?   */
+           no_cpu_meter_red,          /* Feng shui on the status screen   */
+           no_arith,                  /* Skip most arithmetic ops         */
+           shuffle_queue,             /* Shuffle input queue?             */
+           bitmap_changed = 1,        /* Time to update bitmap?           */
+           qemu_mode,                 /* Running in QEMU mode?            */
+           skip_requested,            /* Skip request, via SIGUSR1        */
+           run_over10m,               /* Run time over 10 minutes?        */
+           persistent_mode,           /* Running in persistent mode?      */
+           deferred_mode,             /* Deferred forkserver mode?        */
+           fast_cal;                  /* Try to calibrate faster?         */
+
 #endif
