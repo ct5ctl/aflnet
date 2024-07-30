@@ -69,10 +69,8 @@ afl-as: afl-as.c afl-as.h $(COMM_HDR) | test_x86
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS)
 	ln -sf afl-as as
 
-# afl-fuzz: afl-fuzz.c $(COMM_HDR) aflnet.o aflnet.h libs/cJSON.c | test_x86
-# 	$(CC) $(CFLAGS) $@.c aflnet.o libs/cJSON.c -o $@ $(LDFLAGS)
 afl-fuzz: afl-fuzz.c $(COMM_HDR) aflnet.o aflnet.h libs/cJSON.c afl-fuzz-mutation-rule.c | test_x86
-    $(CC) $(CFLAGS) $@.c aflnet.o libs/cJSON.c afl-fuzz-mutation-rule.c -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $@.c aflnet.o libs/cJSON.c afl-fuzz-mutation-rule.c -o $@ $(LDFLAGS)
 
 afl-replay: afl-replay.c $(COMM_HDR) aflnet.o aflnet.h | test_x86
 	$(CC) $(CFLAGS) $@.c aflnet.o -o $@ $(LDFLAGS)
