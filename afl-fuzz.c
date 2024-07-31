@@ -443,11 +443,12 @@ static s32 interesting_32[] = { INTERESTING_8, INTERESTING_16, INTERESTING_32 };
 
 /* Stage value types */
 
-enum {
-  /* 00 */ STAGE_VAL_NONE,
-  /* 01 */ STAGE_VAL_LE,
-  /* 02 */ STAGE_VAL_BE
-};
+//cc
+// enum {
+//   /* 00 */ STAGE_VAL_NONE,
+//   /* 01 */ STAGE_VAL_LE,
+//   /* 02 */ STAGE_VAL_BE
+// };
 
 /* Execution status fault codes */
 

@@ -166,4 +166,11 @@ extern struct queue_entry {
   u32 unique_state_count;             /* Unique number of states traversed by this queue entry */
 
 };
+
+extern enum {
+  /* 00 */ STAGE_VAL_NONE,
+  /* 01 */ STAGE_VAL_LE,
+  /* 02 */ STAGE_VAL_BE
+};
+
 #endif
