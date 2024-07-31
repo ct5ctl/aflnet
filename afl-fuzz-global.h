@@ -55,6 +55,14 @@
 // 声明函数
 u32 UR(u32 limit);
 u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len);
+u32 choose_block_len(u32 limit);
+void locate_diffs(u8* ptr1, u8* ptr2, u32 len, s32* first, s32* last);
+void maybe_add_auto(u8* mem, u32 len);
+u8 could_be_bitflip(u32 xor_val);
+u8 could_be_arith(u32 old_val, u32 new_val, u8 blen);
+u8 could_be_bitflip(u32 xor_val);
+u8 could_be_interest(u32 old_val, u32 new_val, u8 blen, u8 check_le);
+void mark_as_det_done(struct queue_entry* q);
 
 
 // 声明其他全局变量

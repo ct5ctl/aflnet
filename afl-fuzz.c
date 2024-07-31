@@ -1644,7 +1644,7 @@ static void bind_to_free_cpu(void) {
 /* Helper function to compare buffers; returns first and last differing offset. We
    use this to find reasonable locations for splicing two files. */
 
-static void locate_diffs(u8* ptr1, u8* ptr2, u32 len, s32* first, s32* last) {
+void locate_diffs(u8* ptr1, u8* ptr2, u32 len, s32* first, s32* last) {
 
   s32 f_loc = -1;
   s32 l_loc = -1;
@@ -1829,7 +1829,7 @@ static u8* DTD(u64 cur_ms, u64 event_ms) {
    .state file to avoid repeating deterministic fuzzing when resuming aborted
    scans. */
 
-static void mark_as_det_done(struct queue_entry* q) {
+void mark_as_det_done(struct queue_entry* q) {
 
   u8* fn = strrchr(q->fname, '/');
   s32 fd;
@@ -2968,7 +2968,7 @@ static inline u8 memcmp_nocase(u8* m1, u8* m2, u32 len) {
 
 /* Maybe add automatic extra. */
 
-static void maybe_add_auto(u8* mem, u32 len) {
+void maybe_add_auto(u8* mem, u32 len) {
 
   u32 i;
 
@@ -5856,7 +5856,7 @@ u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 /* Helper to choose random block len for block operations in fuzz_one().
    Doesn't return zero, provided that max_len is > 0. */
 
-static u32 choose_block_len(u32 limit) {
+u32 choose_block_len(u32 limit) {
 
   u32 min_value, max_value;
   u32 rlim = MIN(queue_cycle, 3);
@@ -5974,7 +5974,7 @@ static u32 calculate_score(struct queue_entry* q) {
    return 1 if xor_val is zero, which implies that the old and attempted new
    values are identical and the exec would be a waste of time. */
 
-static u8 could_be_bitflip(u32 xor_val) {
+u8 could_be_bitflip(u32 xor_val) {
 
   u32 sh = 0;
 
@@ -6004,7 +6004,7 @@ static u8 could_be_bitflip(u32 xor_val) {
 /* Helper function to see if a particular value is reachable through
    arithmetic operations. Used for similar purposes. */
 
-static u8 could_be_arith(u32 old_val, u32 new_val, u8 blen) {
+u8 could_be_arith(u32 old_val, u32 new_val, u8 blen) {
 
   u32 i, ov = 0, nv = 0, diffs = 0;
 
@@ -6085,7 +6085,7 @@ static u8 could_be_arith(u32 old_val, u32 new_val, u8 blen) {
    already executed LE insertion for current blen and wants to see
    if BE variant passed in new_val is unique. */
 
-static u8 could_be_interest(u32 old_val, u32 new_val, u8 blen, u8 check_le) {
+u8 could_be_interest(u32 old_val, u32 new_val, u8 blen, u8 check_le) {
 
   u32 i, j;
 
