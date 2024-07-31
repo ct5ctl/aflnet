@@ -90,6 +90,9 @@ extern struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
                           *queue_top, /* Top of the list                  */
                           *q_prev100; /* Previous 100 marker              */
 
+extern u8  dumb_mode,                 /* Run in non-instrumented mode?    */
+            no_arith;                  /* Skip most arithmetic ops         */
+
 // EXP_ST u8  skip_deterministic,        /* Skip deterministic stages?       */
 //            force_deterministic,       /* Force deterministic stages?      */
 //            use_splicing,              /* Recombine input files?           */
@@ -116,4 +119,15 @@ extern struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
 //            deferred_mode,             /* Deferred forkserver mode?        */
 //            fast_cal;                  /* Try to calibrate faster?         */
 
+extern u32 master_id, master_max;     /* Master instance job splitting    */
+
+extern u32 queued_paths;              /* Total number of queued testcases */
+extern u64 unique_crashes;            /* Crashes with unique signatures   */
+
+extern s32 stage_cur_byte;            /* Byte offset of current stage op  */
+
+extern u8* trace_bits;                /* SHM with instrumentation bitmap  */
+
+extern u64 blocks_eff_total,          /* Blocks subject to effector maps  */
+            blocks_eff_select;         /* Blocks selected as fuzzable      */
 #endif

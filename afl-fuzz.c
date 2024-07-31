@@ -154,6 +154,8 @@ EXP_ST u64 mem_limit  = MEM_LIMIT;    /* Memory cap for child (MB)        */
 static u32 stats_update_freq = 1;     /* Stats update frequency (execs)   */
 
 //cc
+u8  dumb_mode,                 /* Run in non-instrumented mode?    */
+    no_arith;                  /* Skip most arithmetic ops         */ 
 EXP_ST u8  force_deterministic,       /* Force deterministic stages?      */
            use_splicing,              /* Recombine input files?           */
            dumb_mode,                 /* Run in non-instrumented mode?    */
@@ -214,7 +216,7 @@ static s32 forksrv_pid,               /* PID of the fork server           */
            child_pid = -1,            /* PID of the fuzzed program        */
            out_dir_fd = -1;           /* FD of the lock file              */
 
-EXP_ST u8* trace_bits;                /* SHM with instrumentation bitmap  */
+u8* trace_bits;                /* SHM with instrumentation bitmap  */
 
 EXP_ST u8  virgin_bits[MAP_SIZE],     /* Regions yet untouched by fuzzing */
            virgin_tmout[MAP_SIZE],    /* Bits we haven't seen in tmouts   */
@@ -228,8 +230,11 @@ static volatile u8 stop_soon,         /* Ctrl-C pressed?                  */
                    clear_screen = 1,  /* Window resized?                  */
                    child_timed_out;   /* Traced process timed out?        */
 
-EXP_ST u32 queued_paths,              /* Total number of queued testcases */
-           queued_variable,           /* Testcases with variable behavior */
+//cc   
+u32 queued_paths;              /* Total number of queued testcases */
+u64 unique_crashes;            /* Crashes with unique signatures   */
+
+EXP_ST u32 queued_variable,           /* Testcases with variable behavior */
            queued_at_start,           /* Total number of initial inputs   */
            queued_discovered,         /* Items discovered during this run */
            queued_imported,           /* Items imported via -S            */
@@ -245,8 +250,26 @@ EXP_ST u32 queued_paths,              /* Total number of queued testcases */
            current_entry,             /* Current queue entry ID           */
            havoc_div = 1;             /* Cycle count divisor for havoc    */
 
+//cc
+u64 blocks_eff_total,          /* Blocks subject to effector maps  */
+    blocks_eff_select;         /* Blocks selected as fuzzable      */
 EXP_ST u64 total_crashes,             /* Total number of crashes          */
-           unique_crashes,            /* Crashes with unique signatures   */
+           total_tmouts,              /* Total number of timeouts         */
+           unique_tmouts,             /* Timeouts with unique signatures  */
+           unique_hangs,              /* Hangs with unique signatures     */
+           total_execs,               /* Total execve() calls             */
+           slowest_exec_ms,           /* Slowest testcase non hang in ms  */
+           start_time,                /* Unix start time (ms)             */
+           last_path_time,            /* Time for most recent path (ms)   */
+           last_crash_time,           /* Time for most recent crash (ms)  */
+           last_hang_time,            /* Time for most recent hang (ms)   */
+           last_crash_execs,          /* Exec counter at last crash       */
+           queue_cycle,               /* Queue round counter              */
+           cycles_wo_finds,           /* Cycles without any new paths     */
+           trim_execs,                /* Execs done to trim input files   */
+           bytes_trim_in,             /* Bytes coming into the trimmer    */
+           bytes_trim_out;            /* Bytes coming outa the trimmer    */          
+EXP_ST u64 total_crashes,             /* Total number of crashes          */
            total_tmouts,              /* Total number of timeouts         */
            unique_tmouts,             /* Timeouts with unique signatures  */
            unique_hangs,              /* Hangs with unique signatures     */
@@ -263,7 +286,44 @@ EXP_ST u64 total_crashes,             /* Total number of crashes          */
            bytes_trim_in,             /* Bytes coming into the trimmer    */
            bytes_trim_out,            /* Bytes coming outa the trimmer    */
            blocks_eff_total,          /* Blocks subject to effector maps  */
-           blocks_eff_select;         /* Blocks selected as fuzzable      */
+           blocks_eff_select;         /* Blocks selected as fuzzable      */                
+
+// EXP_ST u32 queued_paths,              /* Total number of queued testcases */
+//            queued_variable,           /* Testcases with variable behavior */
+//            queued_at_start,           /* Total number of initial inputs   */
+//            queued_discovered,         /* Items discovered during this run */
+//            queued_imported,           /* Items imported via -S            */
+//            queued_favored,            /* Paths deemed favorable           */
+//            queued_with_cov,           /* Paths with new coverage bytes    */
+//            pending_not_fuzzed,        /* Queued but not done yet          */
+//            pending_favored,           /* Pending favored paths            */
+//            cur_skipped_paths,         /* Abandoned inputs in cur cycle    */
+//            cur_depth,                 /* Current path depth               */
+//            max_depth,                 /* Max path depth                   */
+//            useless_at_start,          /* Number of useless starting paths */
+//            var_byte_count,            /* Bitmap bytes with var behavior   */
+//            current_entry,             /* Current queue entry ID           */
+//            havoc_div = 1;             /* Cycle count divisor for havoc    */
+
+// EXP_ST u64 total_crashes,             /* Total number of crashes          */
+//            unique_crashes,            /* Crashes with unique signatures   */
+//            total_tmouts,              /* Total number of timeouts         */
+//            unique_tmouts,             /* Timeouts with unique signatures  */
+//            unique_hangs,              /* Hangs with unique signatures     */
+//            total_execs,               /* Total execve() calls             */
+//            slowest_exec_ms,           /* Slowest testcase non hang in ms  */
+//            start_time,                /* Unix start time (ms)             */
+//            last_path_time,            /* Time for most recent path (ms)   */
+//            last_crash_time,           /* Time for most recent crash (ms)  */
+//            last_hang_time,            /* Time for most recent hang (ms)   */
+//            last_crash_execs,          /* Exec counter at last crash       */
+//            queue_cycle,               /* Queue round counter              */
+//            cycles_wo_finds,           /* Cycles without any new paths     */
+//            trim_execs,                /* Execs done to trim input files   */
+//            bytes_trim_in,             /* Bytes coming into the trimmer    */
+//            bytes_trim_out,            /* Bytes coming outa the trimmer    */
+//            blocks_eff_total,          /* Blocks subject to effector maps  */
+//            blocks_eff_select;         /* Blocks selected as fuzzable      */
 
 static u32 subseq_tmouts;             /* Number of timeouts in a row      */
 
@@ -275,12 +335,15 @@ static u32 subseq_tmouts;             /* Number of timeouts in a row      */
 // static s32 stage_cur, stage_max;      /* Stage progression                */
 static s32 splicing_with = -1;        /* Splicing with which test case?   */
 
-static u32 master_id, master_max;     /* Master instance job splitting    */
+//cc
+u32 master_id, master_max;     /* Master instance job splitting    */
 
 static u32 syncing_case;              /* Syncing with case #...           */
 
-static s32 stage_cur_byte,            /* Byte offset of current stage op  */
-           stage_cur_val;             /* Value used for stage op          */
+//cc
+s32 stage_cur_byte;            /* Byte offset of current stage op  */
+
+static s32 stage_cur_val;             /* Value used for stage op          */
 
 //cc
 // static u8  stage_val_type;            /* Value type (STAGE_VAL_*)         */
@@ -6266,7 +6329,7 @@ AFLNET_REGIONS_SELECTION:;
   orig_perf = perf_score = calculate_score(queue_cur);//调用calculate_score来计算当前种子的perf_score，该变量是用来衡量后续将种子用于随机破坏性变异的程度（次数）。
   
   //cc
-  perform_mutation_and_fuzzing(argv, out_buf, len, M2_len, eff_map, &orig_hit_cnt, &new_hit_cnt, orig_in);
+  perform_mutation_and_fuzzing(argv, out_buf, len, M2_len, eff_map, &orig_hit_cnt, &new_hit_cnt, orig_in, ret_val, doing_det, prev_cksum, a_len, a_collect, eff_cnt);
   
   //----
 
