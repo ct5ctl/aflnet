@@ -1487,7 +1487,7 @@ static u64 get_cur_time_us(void) {
 /* Generate a random number (from 0 to limit - 1). This may
    have slight bias. */
 
-static inline u32 UR(u32 limit) {
+inline u32 UR(u32 limit) {
 
   if (unlikely(!rand_cnt--)) {
 
