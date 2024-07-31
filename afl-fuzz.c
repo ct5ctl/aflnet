@@ -151,7 +151,8 @@ EXP_ST u64 mem_limit  = MEM_LIMIT;    /* Memory cap for child (MB)        */
 static u32 stats_update_freq = 1;     /* Stats update frequency (execs)   */
 
 //cc
-u8  dumb_mode,                 /* Run in non-instrumented mode?    */
+u8  skip_deterministic,        /* Skip deterministic stages?       */
+    dumb_mode,                 /* Run in non-instrumented mode?    */
     use_splicing,              /* Recombine input files?           */
     no_arith;                  /* Skip most arithmetic ops         */ 
 EXP_ST u8  force_deterministic,       /* Force deterministic stages?      */

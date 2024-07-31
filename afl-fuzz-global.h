@@ -52,6 +52,11 @@
 
 #include <sys/types.h>
 
+// 声明函数
+u32 UR(u32 limit);
+
+
+// 声明其他全局变量
 extern u8 *stage_name,       /* Name of the current fuzz stage   */
           *stage_short,               /* Short stage name                 */
           *syncing_party;             /* Currently syncing with...        */
@@ -84,14 +89,13 @@ extern enum {
   /* 16 */ STAGE_SPLICE
 };
 
-extern u8  skip_deterministic;        /* Skip deterministic stages?       */
-
 extern struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
                           *queue_cur, /* Current offset within the queue  */
                           *queue_top, /* Top of the list                  */
                           *q_prev100; /* Previous 100 marker              */
 
-extern u8  dumb_mode,                 /* Run in non-instrumented mode?    */
+extern u8   skip_deterministic,        /* Skip deterministic stages?       */
+            dumb_mode,                 /* Run in non-instrumented mode?    */
             use_splicing,              /* Recombine input files?           */
             no_arith;                  /* Skip most arithmetic ops         */
 
