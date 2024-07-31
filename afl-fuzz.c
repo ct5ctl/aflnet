@@ -247,6 +247,22 @@ EXP_ST u32 queued_variable,           /* Testcases with variable behavior */
            var_byte_count,            /* Bitmap bytes with var behavior   */
            current_entry,             /* Current queue entry ID           */
            havoc_div = 1;             /* Cycle count divisor for havoc    */
+// EXP_ST u32 queued_paths,              /* Total number of queued testcases */
+//            queued_variable,           /* Testcases with variable behavior */
+//            queued_at_start,           /* Total number of initial inputs   */
+//            queued_discovered,         /* Items discovered during this run */
+//            queued_imported,           /* Items imported via -S            */
+//            queued_favored,            /* Paths deemed favorable           */
+//            queued_with_cov,           /* Paths with new coverage bytes    */
+//            pending_not_fuzzed,        /* Queued but not done yet          */
+//            pending_favored,           /* Pending favored paths            */
+//            cur_skipped_paths,         /* Abandoned inputs in cur cycle    */
+//            cur_depth,                 /* Current path depth               */
+//            max_depth,                 /* Max path depth                   */
+//            useless_at_start,          /* Number of useless starting paths */
+//            var_byte_count,            /* Bitmap bytes with var behavior   */
+//            current_entry,             /* Current queue entry ID           */
+//            havoc_div = 1;             /* Cycle count divisor for havoc    */
 
 //cc
 u64 blocks_eff_total,          /* Blocks subject to effector maps  */
@@ -266,42 +282,7 @@ EXP_ST u64 total_crashes,             /* Total number of crashes          */
            cycles_wo_finds,           /* Cycles without any new paths     */
            trim_execs,                /* Execs done to trim input files   */
            bytes_trim_in,             /* Bytes coming into the trimmer    */
-           bytes_trim_out;            /* Bytes coming outa the trimmer    */          
-EXP_ST u64 total_crashes,             /* Total number of crashes          */
-           total_tmouts,              /* Total number of timeouts         */
-           unique_tmouts,             /* Timeouts with unique signatures  */
-           unique_hangs,              /* Hangs with unique signatures     */
-           total_execs,               /* Total execve() calls             */
-           slowest_exec_ms,           /* Slowest testcase non hang in ms  */
-           start_time,                /* Unix start time (ms)             */
-           last_path_time,            /* Time for most recent path (ms)   */
-           last_crash_time,           /* Time for most recent crash (ms)  */
-           last_hang_time,            /* Time for most recent hang (ms)   */
-           last_crash_execs,          /* Exec counter at last crash       */
-           queue_cycle,               /* Queue round counter              */
-           cycles_wo_finds,           /* Cycles without any new paths     */
-           trim_execs,                /* Execs done to trim input files   */
-           bytes_trim_in,             /* Bytes coming into the trimmer    */
-           bytes_trim_out,            /* Bytes coming outa the trimmer    */
-           blocks_eff_total,          /* Blocks subject to effector maps  */
-           blocks_eff_select;         /* Blocks selected as fuzzable      */                
-
-// EXP_ST u32 queued_paths,              /* Total number of queued testcases */
-//            queued_variable,           /* Testcases with variable behavior */
-//            queued_at_start,           /* Total number of initial inputs   */
-//            queued_discovered,         /* Items discovered during this run */
-//            queued_imported,           /* Items imported via -S            */
-//            queued_favored,            /* Paths deemed favorable           */
-//            queued_with_cov,           /* Paths with new coverage bytes    */
-//            pending_not_fuzzed,        /* Queued but not done yet          */
-//            pending_favored,           /* Pending favored paths            */
-//            cur_skipped_paths,         /* Abandoned inputs in cur cycle    */
-//            cur_depth,                 /* Current path depth               */
-//            max_depth,                 /* Max path depth                   */
-//            useless_at_start,          /* Number of useless starting paths */
-//            var_byte_count,            /* Bitmap bytes with var behavior   */
-//            current_entry,             /* Current queue entry ID           */
-//            havoc_div = 1;             /* Cycle count divisor for havoc    */
+           bytes_trim_out;            /* Bytes coming outa the trimmer    */                       
 
 // EXP_ST u64 total_crashes,             /* Total number of crashes          */
 //            unique_crashes,            /* Crashes with unique signatures   */
