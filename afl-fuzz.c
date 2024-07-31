@@ -432,9 +432,9 @@ static u8* (*post_handler)(u8* buf, u32* len);
 
 /* Interesting values, as per config.h */
 //cc
-s8  interesting_8[];
-s16 interesting_16[];
-s32 interesting_32[];
+// s8  interesting_8[];
+// s16 interesting_16[];
+// s32 interesting_32[];
 // s8  interesting_8[]  = { INTERESTING_8 };
 // s16 interesting_16[] = { INTERESTING_8, INTERESTING_16 };
 // s32 interesting_32[] = { INTERESTING_8, INTERESTING_16, INTERESTING_32 };
