@@ -1,5 +1,6 @@
 // afl-fuzz-global.h
 // afl-fuzz.c与afl-fuzz-mutation-rule.c之间的全局变量声明和定义
+#include <sys/types.h>
 #ifndef QUEUE_ENTRY_H
 #define QUEUE_ENTRY_H
 
