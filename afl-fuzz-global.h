@@ -83,7 +83,7 @@ extern enum {
   /* 16 */ STAGE_SPLICE
 };
 
-extern u8  skip_deterministic,        /* Skip deterministic stages?       */
+extern u8  skip_deterministic;        /* Skip deterministic stages?       */
 
 extern struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
                           *queue_cur, /* Current offset within the queue  */
