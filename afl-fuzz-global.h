@@ -87,7 +87,7 @@ extern u8  skip_deterministic;        /* Skip deterministic stages?       */
 
 extern struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
                           *queue_cur, /* Current offset within the queue  */
-                          *queue _top, /* Top of the list                  */
+                          *queue_top, /* Top of the list                  */
                           *q_prev100; /* Previous 100 marker              */
 
 // EXP_ST u8  skip_deterministic,        /* Skip deterministic stages?       */
