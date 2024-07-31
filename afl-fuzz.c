@@ -104,10 +104,9 @@ afl-fuzz-global.h
 
 
 
-u8  stage_val_type;            /* Value type (STAGE_VAL_*)         */
 
-u64 stage_finds[32],           /* Patterns found per fuzz stage    */
-    stage_cycles[32];          /* Execs per fuzz stage             */
+
+
 
 // enum {
 //   /* 00 */ STAGE_FLIP1,
@@ -248,7 +247,7 @@ EXP_ST u32 queued_variable,           /* Testcases with variable behavior */
            cur_depth,                 /* Current path depth               */
            max_depth,                 /* Max path depth                   */
            useless_at_start,          /* Number of useless starting paths */
-           var_byte_count,            /* Bitmap bytes with var behavior   */
+           var_byte_count;            /* Bitmap bytes with var behavior   */
 // EXP_ST u32 queued_paths,              /* Total number of queued testcases */
 //            queued_variable,           /* Testcases with variable behavior */
 //            queued_at_start,           /* Total number of initial inputs   */
@@ -330,10 +329,15 @@ static u32 syncing_case;              /* Syncing with case #...           */
 
 //cc
 s32 stage_cur_byte;            /* Byte offset of current stage op  */
+s32 stage_cur_val;             /* Value used for stage op          */
 
-static s32 stage_cur_val;             /* Value used for stage op          */
-
+// static s32 stage_cur_byte;            /* Byte offset of current stage op  */
+// static s32 stage_cur_val;             /* Value used for stage op          */
 //cc
+u8  stage_val_type;            /* Value type (STAGE_VAL_*)         */
+
+u64 stage_finds[32],           /* Patterns found per fuzz stage    */
+    stage_cycles[32];          /* Execs per fuzz stage             */
 // static u8  stage_val_type;            /* Value type (STAGE_VAL_*)         */
 
 // static u64 stage_finds[32],           /* Patterns found per fuzz stage    */

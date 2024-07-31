@@ -105,6 +105,7 @@ extern u32 queued_paths,              /* Total number of queued testcases */
 extern u64 unique_crashes;            /* Crashes with unique signatures   */
 
 extern s32 stage_cur_byte;            /* Byte offset of current stage op  */
+extern s32 stage_cur_val;             /* Value used for stage op          */
 
 extern u8* trace_bits;                /* SHM with instrumentation bitmap  */
 
