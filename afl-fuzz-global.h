@@ -158,6 +158,12 @@ extern s8  interesting_8[]  = { INTERESTING_8 };
 extern s16 interesting_16[] = { INTERESTING_8, INTERESTING_16 };
 extern s32 interesting_32[] = { INTERESTING_8, INTERESTING_16, INTERESTING_32 };
 
+extern struct extra_data {
+  u8* data;                           /* Dictionary token data            */
+  u32 len;                            /* Dictionary token length          */
+  u32 hit_cnt;                        /* Use count in the corpus          */
+};
+
 extern struct extra_data* extras;     /* Extra tokens to fuzz with        */
 extern u32 extras_cnt;                /* Total number of tokens read      */
 
