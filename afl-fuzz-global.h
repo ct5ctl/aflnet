@@ -154,9 +154,12 @@ extern enum {
   /* 02 */ STAGE_VAL_BE
 };
 
-extern s8  interesting_8[]  = { INTERESTING_8 };
-extern s16 interesting_16[] = { INTERESTING_8, INTERESTING_16 };
-extern s32 interesting_32[] = { INTERESTING_8, INTERESTING_16, INTERESTING_32 };
+extern s8  interesting_8[];
+extern s16 interesting_16[];
+extern s32 interesting_32[];
+// extern s8  interesting_8[]  = { INTERESTING_8 };
+// extern s16 interesting_16[] = { INTERESTING_8, INTERESTING_16 };
+// extern s32 interesting_32[] = { INTERESTING_8, INTERESTING_16, INTERESTING_32 };
 
 extern struct extra_data {
   u8* data;                           /* Dictionary token data            */
