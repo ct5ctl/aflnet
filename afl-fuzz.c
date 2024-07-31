@@ -343,10 +343,14 @@ struct queue_entry {
 };
 
 //cccc
-static struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
-                          *queue_cur, /* Current offset within the queue  */
-                          *queue_top, /* Top of the list                  */
-                          *q_prev100; /* Previous 100 marker              */
+struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
+                   *queue_cur, /* Current offset within the queue  */
+                   *queue_top, /* Top of the list                  */
+                   *q_prev100; /* Previous 100 marker              */
+// static struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
+//                           *queue_cur, /* Current offset within the queue  */
+//                           *queue_top, /* Top of the list                  */
+//                           *q_prev100; /* Previous 100 marker              */
 
 static struct queue_entry*
   top_rated[MAP_SIZE];                /* Top entries for bitmap bytes     */
