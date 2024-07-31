@@ -57,6 +57,7 @@ extern u8 *stage_name,       /* Name of the current fuzz stage   */
           *syncing_party;             /* Currently syncing with...        */
 
 extern s32 stage_cur, stage_max;      /* Stage progression                */
+extern s32 splicing_with;        /* Splicing with which test case?   */
 
 extern u8  stage_val_type;            /* Value type (STAGE_VAL_*)         */
 
@@ -91,37 +92,16 @@ extern struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
                           *q_prev100; /* Previous 100 marker              */
 
 extern u8  dumb_mode,                 /* Run in non-instrumented mode?    */
+            use_splicing,              /* Recombine input files?           */
             no_arith;                  /* Skip most arithmetic ops         */
-
-// EXP_ST u8  skip_deterministic,        /* Skip deterministic stages?       */
-//            force_deterministic,       /* Force deterministic stages?      */
-//            use_splicing,              /* Recombine input files?           */
-//            dumb_mode,                 /* Run in non-instrumented mode?    */
-//            score_changed,             /* Scoring for favorites changed?   */
-//            kill_signal,               /* Signal that killed the child     */
-//            resuming_fuzz,             /* Resuming an older fuzzing job?   */
-//            timeout_given,             /* Specific timeout given?          */
-//            not_on_tty,                /* stdout is not a tty              */
-//            term_too_small,            /* terminal dimensions too small    */
-//            uses_asan,                 /* Target uses ASAN?                */
-//            no_forkserver,             /* Disable forkserver?              */
-//            crash_mode,                /* Crash mode! Yeah!                */
-//            in_place_resume,           /* Attempt in-place resume?         */
-//            auto_changed,              /* Auto-generated tokens changed?   */
-//            no_cpu_meter_red,          /* Feng shui on the status screen   */
-//            no_arith,                  /* Skip most arithmetic ops         */
-//            shuffle_queue,             /* Shuffle input queue?             */
-//            bitmap_changed = 1,        /* Time to update bitmap?           */
-//            qemu_mode,                 /* Running in QEMU mode?            */
-//            skip_requested,            /* Skip request, via SIGUSR1        */
-//            run_over10m,               /* Run time over 10 minutes?        */
-//            persistent_mode,           /* Running in persistent mode?      */
-//            deferred_mode,             /* Deferred forkserver mode?        */
-//            fast_cal;                  /* Try to calibrate faster?         */
 
 extern u32 master_id, master_max;     /* Master instance job splitting    */
 
-extern u32 queued_paths;              /* Total number of queued testcases */
+extern u32 queued_paths,              /* Total number of queued testcases */
+            havoc_div,             /* Cycle count divisor for havoc    */
+            pending_not_fuzzed,        /* Queued but not done yet          */
+            pending_favored,           /* Pending favored paths            */
+            current_entry;             /* Current queue entry ID           */
 extern u64 unique_crashes;            /* Crashes with unique signatures   */
 
 extern s32 stage_cur_byte;            /* Byte offset of current stage op  */
@@ -172,5 +152,37 @@ extern enum {
   /* 01 */ STAGE_VAL_LE,
   /* 02 */ STAGE_VAL_BE
 };
+
+extern s8  interesting_8[]
+extern s16 interesting_16[];
+extern s32 interesting_32[];
+
+extern struct extra_data* extras;     /* Extra tokens to fuzz with        */
+extern u32 extras_cnt;                /* Total number of tokens read      */
+
+extern struct extra_data* a_extras;   /* Automatically selected extras    */
+extern u32 a_extras_cnt;              /* Total number of tokens available */
+
+/* flags */
+extern u8 use_net;
+extern u8 poll_wait;
+extern u8 server_wait;
+extern u8 socket_timeout;
+extern u8 protocol_selected;
+extern u8 terminate_child;
+extern u8 corpus_read_or_sync;
+extern u8 state_aware_mode;
+extern u8 region_level_mutation;
+extern u8 state_selection_algo, seed_selection_algo;
+extern u8 false_negative_reduction;
+
+extern volatile u8 stop_soon,         /* Ctrl-C pressed?                  */
+                    clear_screen,  /* Window resized?                  */
+                    child_timed_out;   /* Traced process timed out?        */
+
+extern char **was_fuzzed_map; /* A 2D array keeping state-specific was_fuzzed information */
+extern u32 target_state_id;
+
+extern klist_t(lms) *kl_messages;
 
 #endif

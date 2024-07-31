@@ -100,11 +100,9 @@
 /*
 afl-fuzz-global.h
 */
-u8 *stage_name = "init",       /* Name of the current fuzz stage   */
-          *stage_short,               /* Short stage name                 */
-          *syncing_party;             /* Currently syncing with...        */
 
-s32 stage_cur, stage_max;      /* Stage progression                */
+
+
 
 u8  stage_val_type;            /* Value type (STAGE_VAL_*)         */
 
@@ -155,9 +153,9 @@ static u32 stats_update_freq = 1;     /* Stats update frequency (execs)   */
 
 //cc
 u8  dumb_mode,                 /* Run in non-instrumented mode?    */
+    use_splicing,              /* Recombine input files?           */
     no_arith;                  /* Skip most arithmetic ops         */ 
 EXP_ST u8  force_deterministic,       /* Force deterministic stages?      */
-           use_splicing,              /* Recombine input files?           */
            score_changed,             /* Scoring for favorites changed?   */
            kill_signal,               /* Signal that killed the child     */
            resuming_fuzz,             /* Resuming an older fuzzing job?   */
@@ -224,12 +222,20 @@ static u8  var_bytes[MAP_SIZE];       /* Bytes that appear to be variable */
 
 static s32 shm_id;                    /* ID of the SHM region             */
 
-static volatile u8 stop_soon,         /* Ctrl-C pressed?                  */
-                   clear_screen = 1,  /* Window resized?                  */
-                   child_timed_out;   /* Traced process timed out?        */
+//cc
+volatile u8 stop_soon,         /* Ctrl-C pressed?                  */
+            clear_screen = 1,  /* Window resized?                  */
+            child_timed_out;   /* Traced process timed out?        */
+// static volatile u8 stop_soon,         /* Ctrl-C pressed?                  */
+//                    clear_screen = 1,  /* Window resized?                  */
+//                    child_timed_out;   /* Traced process timed out?        */
 
 //cc   
-u32 queued_paths;              /* Total number of queued testcases */
+u32 queued_paths,              /* Total number of queued testcases */
+    havoc_div = 1,             /* Cycle count divisor for havoc    */
+    pending_not_fuzzed,        /* Queued but not done yet          */
+    pending_favored,           /* Pending favored paths            */
+    current_entry;             /* Current queue entry ID           */
 u64 unique_crashes;            /* Crashes with unique signatures   */
 
 EXP_ST u32 queued_variable,           /* Testcases with variable behavior */
@@ -238,15 +244,11 @@ EXP_ST u32 queued_variable,           /* Testcases with variable behavior */
            queued_imported,           /* Items imported via -S            */
            queued_favored,            /* Paths deemed favorable           */
            queued_with_cov,           /* Paths with new coverage bytes    */
-           pending_not_fuzzed,        /* Queued but not done yet          */
-           pending_favored,           /* Pending favored paths            */
            cur_skipped_paths,         /* Abandoned inputs in cur cycle    */
            cur_depth,                 /* Current path depth               */
            max_depth,                 /* Max path depth                   */
            useless_at_start,          /* Number of useless starting paths */
            var_byte_count,            /* Bitmap bytes with var behavior   */
-           current_entry,             /* Current queue entry ID           */
-           havoc_div = 1;             /* Cycle count divisor for havoc    */
 // EXP_ST u32 queued_paths,              /* Total number of queued testcases */
 //            queued_variable,           /* Testcases with variable behavior */
 //            queued_at_start,           /* Total number of initial inputs   */
@@ -307,12 +309,19 @@ EXP_ST u64 total_crashes,             /* Total number of crashes          */
 static u32 subseq_tmouts;             /* Number of timeouts in a row      */
 
 //cc
+u8 *stage_name = "init",       /* Name of the current fuzz stage   */
+    *stage_short,               /* Short stage name                 */
+    *syncing_party;             /* Currently syncing with...        */
+
+s32 stage_cur, stage_max;      /* Stage progression                */
+s32 splicing_with = -1;        /* Splicing with which test case?   */
+
 // static u8 *stage_name = "init",       /* Name of the current fuzz stage   */
 //           *stage_short,               /* Short stage name                 */
 //           *syncing_party;             /* Currently syncing with...        */
-
+// 
 // static s32 stage_cur, stage_max;      /* Stage progression                */
-static s32 splicing_with = -1;        /* Splicing with which test case?   */
+// static s32 splicing_with = -1;        /* Splicing with which test case?   */
 
 //cc
 u32 master_id, master_max;     /* Master instance job splitting    */
@@ -403,20 +412,28 @@ struct extra_data {
   u32 len;                            /* Dictionary token length          */
   u32 hit_cnt;                        /* Use count in the corpus          */
 };
+//cc
+struct extra_data* extras;     /* Extra tokens to fuzz with        */
+u32 extras_cnt;                /* Total number of tokens read      */
+// static struct extra_data* extras;     /* Extra tokens to fuzz with        */
+// static u32 extras_cnt;                /* Total number of tokens read      */
 
-static struct extra_data* extras;     /* Extra tokens to fuzz with        */
-static u32 extras_cnt;                /* Total number of tokens read      */
-
-static struct extra_data* a_extras;   /* Automatically selected extras    */
-static u32 a_extras_cnt;              /* Total number of tokens available */
+//cc
+struct extra_data* a_extras;   /* Automatically selected extras    */
+u32 a_extras_cnt;              /* Total number of tokens available */
+// static struct extra_data* a_extras;   /* Automatically selected extras    */
+// static u32 a_extras_cnt;              /* Total number of tokens available */
 
 static u8* (*post_handler)(u8* buf, u32* len);
 
 /* Interesting values, as per config.h */
-
-static s8  interesting_8[]  = { INTERESTING_8 };
-static s16 interesting_16[] = { INTERESTING_8, INTERESTING_16 };
-static s32 interesting_32[] = { INTERESTING_8, INTERESTING_16, INTERESTING_32 };
+//cc
+s8  interesting_8[]  = { INTERESTING_8 };
+s16 interesting_16[] = { INTERESTING_8, INTERESTING_16 };
+s32 interesting_32[] = { INTERESTING_8, INTERESTING_16, INTERESTING_32 };
+// static s8  interesting_8[]  = { INTERESTING_8 };
+// static s16 interesting_16[] = { INTERESTING_8, INTERESTING_16 };
+// static s32 interesting_32[] = { INTERESTING_8, INTERESTING_16, INTERESTING_32 };
 
 /* Fuzzing stages */
 
@@ -490,12 +507,14 @@ u32 messages_sent = 0;
 EXP_ST u8 session_virgin_bits[MAP_SIZE];     /* Regions yet untouched while the SUT is still running */
 EXP_ST u8 *cleanup_script; /* script to clean up the environment of the SUT -- make fuzzing more deterministic */
 EXP_ST u8 *netns_name; /* network namespace name to run server in */
+//cc
 char **was_fuzzed_map = NULL; /* A 2D array keeping state-specific was_fuzzed information */
 u32 fuzzed_map_states = 0;
 u32 fuzzed_map_qentries = 0;
 u32 max_seed_region_count = 0;
 u32 local_port;		/* TCP/UDP port number to use as source */
 
+//cc
 /* flags */
 u8 use_net = 0;
 u8 poll_wait = 0;
@@ -6310,7 +6329,7 @@ AFLNET_REGIONS_SELECTION:;
   orig_perf = perf_score = calculate_score(queue_cur);//调用calculate_score来计算当前种子的perf_score，该变量是用来衡量后续将种子用于随机破坏性变异的程度（次数）。
   
   //cc
-  perform_mutation_and_fuzzing(argv, out_buf, len, M2_len, eff_map, &orig_hit_cnt, &new_hit_cnt, orig_in, ret_val, doing_det, prev_cksum, a_len, a_collect, eff_cnt);
+  perform_mutation_and_fuzzing(argv, out_buf, len, M2_len, eff_map, &orig_hit_cnt, &new_hit_cnt, orig_in, ret_val, doing_det, prev_cksum, a_len, a_collect, eff_cnt, in_buf, ex_tmp, splice_cycle, perf_score, orig_perf, fd, temp_len, havoc_queued);
   
   //----
 
