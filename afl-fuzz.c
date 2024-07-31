@@ -411,11 +411,11 @@ struct queue_entry *queue,     /* Fuzzing queue (linked list)      */
 static struct queue_entry*
   top_rated[MAP_SIZE];                /* Top entries for bitmap bytes     */
 
-struct extra_data {
-  u8* data;                           /* Dictionary token data            */
-  u32 len;                            /* Dictionary token length          */
-  u32 hit_cnt;                        /* Use count in the corpus          */
-};
+// struct extra_data {
+//   u8* data;                           /* Dictionary token data            */
+//   u32 len;                            /* Dictionary token length          */
+//   u32 hit_cnt;                        /* Use count in the corpus          */
+// };
 //cc
 struct extra_data* extras;     /* Extra tokens to fuzz with        */
 u32 extras_cnt;                /* Total number of tokens read      */
