@@ -489,7 +489,7 @@ enum {
 char** use_argv;  /* argument to run the target program. In vanilla AFL, this is a local variable in main. */
 /* add these declarations here so we can call these functions earlier */
 static u8 run_target(char** argv, u32 timeout);
-static inline u32 UR(u32 limit);
+inline u32 UR(u32 limit);
 static inline u8 has_new_bits(u8* virgin_map);
 
 /* AFLNet-specific variables & functions */
