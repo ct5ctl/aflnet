@@ -2,7 +2,7 @@
 #include "afl-fuzz-global.h"
 
 // aflnet变异函数
-void perform_mutation_and_fuzzing(u8** argv, u8* out_buf, s32 len, u8* eff_map, u64* orig_hit_cnt, u64* new_hit_cnt) {
+void perform_mutation_and_fuzzing(u8** argv, u8* out_buf, s32 len, u32 M2_len, u8* eff_map, u64* orig_hit_cnt, u64* new_hit_cnt, u8* orig_in) {
   /* Skip right away if -d is given, if we have done deterministic fuzzing on
      this entry ourselves (was_fuzzed), or if it has gone through deterministic
      testing in earlier, resumed runs (passed_det). */
