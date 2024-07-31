@@ -153,7 +153,7 @@ extern enum {
   /* 02 */ STAGE_VAL_BE
 };
 
-extern s8  interesting_8[]
+extern s8  interesting_8[];
 extern s16 interesting_16[];
 extern s32 interesting_32[];
 
