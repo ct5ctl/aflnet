@@ -54,7 +54,7 @@
 
 // 声明函数
 u32 UR(u32 limit);
-u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len)
+u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len);
 
 
 // 声明其他全局变量
