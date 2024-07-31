@@ -158,7 +158,6 @@ u8  dumb_mode,                 /* Run in non-instrumented mode?    */
     no_arith;                  /* Skip most arithmetic ops         */ 
 EXP_ST u8  force_deterministic,       /* Force deterministic stages?      */
            use_splicing,              /* Recombine input files?           */
-           dumb_mode,                 /* Run in non-instrumented mode?    */
            score_changed,             /* Scoring for favorites changed?   */
            kill_signal,               /* Signal that killed the child     */
            resuming_fuzz,             /* Resuming an older fuzzing job?   */
@@ -171,7 +170,6 @@ EXP_ST u8  force_deterministic,       /* Force deterministic stages?      */
            in_place_resume,           /* Attempt in-place resume?         */
            auto_changed,              /* Auto-generated tokens changed?   */
            no_cpu_meter_red,          /* Feng shui on the status screen   */
-           no_arith,                  /* Skip most arithmetic ops         */
            shuffle_queue,             /* Shuffle input queue?             */
            bitmap_changed = 1,        /* Time to update bitmap?           */
            qemu_mode,                 /* Running in QEMU mode?            */
