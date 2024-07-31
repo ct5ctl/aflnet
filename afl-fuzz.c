@@ -6267,6 +6267,7 @@ AFLNET_REGIONS_SELECTION:;
   
   //cc
   perform_mutation_and_fuzzing(argv, out_buf, len, M2_len, eff_map, &orig_hit_cnt, &new_hit_cnt, orig_in);
+  
   //----
 
 //   /* Skip right away if -d is given, if we have done deterministic fuzzing on
