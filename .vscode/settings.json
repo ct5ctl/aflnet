@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "config.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "afl-fuzz-global.h": "c"
     }
 }

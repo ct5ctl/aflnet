@@ -97,6 +97,11 @@ typedef struct queue_entry {
 
 #include <sys/types.h>
 
+// // chat-LLM
+// #include <curl/curl.h>
+// #include <json-c/json.h>
+// #include <unistd.h>
+
 // 声明函数
 u32 UR(u32 limit);
 u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len);
@@ -252,6 +257,24 @@ extern char **was_fuzzed_map; /* A 2D array keeping state-specific was_fuzzed in
 extern u32 target_state_id;
 
 extern klist_t(lms) *kl_messages;
+
+
+
+// 变异位段的结构定义
+typedef struct MutationEntry {
+    int sensitivityScore;
+    int stateBefore;
+    int stateAfter;
+    int mutationOffset;
+    int mutationLength;
+    char alternativeMutations[3][256];  // 假设最多三种替代变异方式
+    char mutatedFragments[3][256];      // 假设最多三种替代变异片段
+    struct MutationEntry *next;         // 链表中的下一个节点
+} MutationEntry;
+
+// 全局变异规则表
+extern MutationEntry *mutation_rule_table;
+
 
 #endif
 

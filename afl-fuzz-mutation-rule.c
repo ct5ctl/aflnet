@@ -1,12 +1,282 @@
 #include <sys/types.h>
 #include "afl-fuzz-global.h"
 
-// s8  interesting_8[]  = { INTERESTING_8 };
-// s16 interesting_16[] = { INTERESTING_8, INTERESTING_16 };
-// s32 interesting_32[] = { INTERESTING_8, INTERESTING_16, INTERESTING_32 };
+void perform_mutation_and_fuzzing(u8** argv, u8* out_buf, s32 len, u32 M2_len, u8* eff_map, u64* orig_hit_cnt, u64* new_hit_cnt, u8* orig_in, u8 ret_val, u8 doing_det, u32 prev_cksum, u32 a_len, u8* a_collect, u32 eff_cnt, u8* in_buf, u8* ex_tmp, u32 splice_cycle, u32 perf_score, u32 orig_perf, u32 fd, u32 temp_len, u64 havoc_queued);
+
+
+// 建表与更新表
+//以链表形式构建的mutation_rule_table，每个节点包含一个mutation_rule结构体，mutation_rule结构体包含了一个mutation_rule结构体的所有信息
+
+// void Update_mutation_rule_table_and_evaluate(selected_seed, s1, kl_messages, state_sequence)
+void Update_mutation_rule_table_and_evaluate(q1, s1, q2, s2)
+{
+    unsigned int num_key_message_pairs = 0;
+    int count1, count2;
+    char **list_q1 = split_string(q1, "\r\n\r\n", &count1);
+    char **list_q2 = split_string(q2, "\r\n\r\n", &count2);
+    char *first_question;
+    char *prompt = construct_prompt_for_mutation_analyse(list_q1, s1, count1, list_q2, s2, count2, &first_question, &num_key_message_pairs);
+    printf("prompt: %s\n", prompt);
+    // printf("first_question: %s\n", first_question);
+    
+    char *llm_answer = chat_with_llm(prompt, "turbo", GRAMMAR_RETRIES, 0.5); 
+    if (llm_answer == NULL)
+      goto free_llm_answer;
+
+    //for test
+    printf("prompt: %s\n", prompt);
+    printf("llm_answer: %s\n", llm_answer);
+    save_to_json_file("llm_output.json", prompt, llm_answer);
+    
+    //评估变异规则表（先评估再更新）
+    evaluate_and_update_MutationRuleTable(llm_answer, q2);
+
+    free(prompt);
+free_llm_answer:
+    free(llm_answer);
+}
+
+
+void evaluate_and_update_MutationRuleTable(llm_answer, kl_messages)
+{
+  //使用alternative方法评估变异规则表项Structural Sensitivity Score（评估llm给出的Structural Sensitivity Score的可信度）
+  unsigned int Structural_Sensitivity_Score = 0;  //评估器
+  //使用alternative方法变异kl_message,根据状态转换是否成功评估Structural Sensitivity Score的可信度
+  evaluate_structural_sensitivity(llm_answer, kl_messages, &Structural_Sensitivity_Score);
+  //更新变异规则表
+  if(Structural_Sensitivity_Score > 0)
+    updateMutationRuleTable(llm_answer, Structural_Sensitivity_Score);
+}
+
+void evaluate_structural_sensitivity(llm_answer, kl_messages, &Structural_Sensitivity_Score)
+{
+  //步骤1：解析llm_answer，获取llm给出的Structural_Sensitivity_Score赋值给Structural_Sensitivity_Score，获取Alternative Mutation Methods Leading to the Same State Transition信息，用于变异kl_messages
+  //步骤2：使用Alternative Mutation Methods Leading to the Same State Transition中的信息变异kl_messages并对目标程序进行多次测试（次数为Alternative Mutation Methods Leading to the Same State Transition中给出的变异方法个数），根据状态转换是否成功评估Structural Sensitivity Score的可信度（成功+2，失败-3）
+
+}
+
+void evaluate_structural_sensitivity(const char *llm_answer, const char *kl_messages, unsigned int *Structural_Sensitivity_Score) {
+    struct json_object *parsed_json;
+    struct json_object *intervals;
+    struct json_object *interval;
+    struct json_object *alternatives;
+    struct json_object *alternative;
+    struct json_object *mutated_fragment;
+    struct json_object *messages_with_mutated_fragment;
+    char *mutated_messages;
+    size_t i, j;
+
+    parsed_json = json_tokener_parse(llm_answer);
+    if (!json_object_object_get_ex(parsed_json, "Mutation Intervals Analysis", &intervals)) {
+        fprintf(stderr, "Error parsing Mutation Intervals Analysis\n");
+        json_object_put(parsed_json);
+        return;
+    }
+
+    size_t n_intervals = json_object_array_length(intervals);
+
+    for (i = 0; i < n_intervals; ++i) {
+        interval = json_object_array_get_idx(intervals, i);
+        if (json_object_object_get_ex(interval, "Alternative Mutation Methods Leading to the Same State Transition", &alternatives)) {
+            size_t n_alternatives = json_object_array_length(alternatives);
+            printf
+            for (j = 0; j < n_alternatives; ++j) {
+                alternative = json_object_array_get_idx(alternatives, j);
+                if (json_object_object_get_ex(alternative, "Mutated Fragment", &mutated_fragment) &&
+                    json_object_object_get_ex(alternative, "Messages with mutated fragment", &messages_with_mutated_fragment)) {
+                    
+                    mutated_messages = strdup(kl_messages);
+                    // Apply the mutation described in `messages_with_mutated_fragment` to `mutated_messages`
+                    
+
+                    if (simulate_state_transition(mutated_messages)) {
+                        *Structural_Sensitivity_Score += 2;  // Success: Increment score
+                    } else {
+                        *Structural_Sensitivity_Score -= 3;  // Failure: Decrement score
+                    }
+                    free(mutated_messages);
+                }
+            }
+        }
+    }
+
+    json_object_put(parsed_json);
+}
+
+void updateMutationRuleTable(char *llm_answer, unsigned int Structural_Sensitivity_Score) {
+    struct json_object *parsed_json;
+    struct json_object *intervals;
+    struct json_object *interval;
+    struct json_object *locationInfo;
+    struct json_object *alternatives;
+    struct json_object *alt;
+
+    parsed_json = json_tokener_parse(llm_answer);
+    if (!json_object_object_get_ex(parsed_json, "Mutation Intervals Analysis", &intervals)) {
+        fprintf(stderr, "Error parsing Mutation Intervals Analysis\n");
+        json_object_put(parsed_json);
+        return;
+    }
+
+    size_t n_intervals = json_object_array_length(intervals);
+
+    for (size_t i = 0; i < n_intervals; ++i) {
+        interval = json_object_array_get_idx(intervals, i);
+        MutationEntry *entry = (MutationEntry *)malloc(sizeof(MutationEntry));
+        if (!entry) {
+            fprintf(stderr, "Memory allocation failed\n");
+            continue;  // or break, depending on error handling policy
+        }
+
+        memset(entry, 0, sizeof(MutationEntry)); // Initialize all fields to zero
+
+        // if (json_object_object_get_ex(interval, "Structural Sensitivity Score", &locationInfo))
+        //     entry->sensitivityScore = json_object_get_int(locationInfo);
+        entry->sensitivityScore = Structural_Sensitivity_Score;
+
+        if (json_object_object_get_ex(interval, "State Before Mutation", &locationInfo))
+            entry->stateBefore = json_object_get_int(locationInfo);
+
+        if (json_object_object_get_ex(interval, "State After Mutation", &locationInfo))
+            entry->stateAfter = json_object_get_int(locationInfo);
+
+        if (json_object_object_get_ex(interval, "M_before_muta Mutation Interval Location Info", &locationInfo)) {
+            if (json_object_object_get_ex(locationInfo, "Mutation Interval Offset", &locationInfo))
+                entry->mutationOffset = json_object_get_int(locationInfo);
+
+            if (json_object_object_get_ex(locationInfo, "Mutation Interval Length", &locationInfo))
+                entry->mutationLength = json_object_get_int(locationInfo);
+        }
+
+        if (json_object_object_get_ex(interval, "Alternative Mutation Methods Leading to the Same State Transition", &alternatives)) {
+            for (size_t j = 0; j < json_object_array_length(alternatives) && j < 3; ++j) {
+                alt = json_object_array_get_idx(alternatives, j);
+                struct json_object *tmp;
+
+                if (json_object_object_get_ex(alt, "Mutated Fragment", &tmp))
+                    strncpy(entry->mutatedFragments[j], json_object_get_string(tmp), 255);
+
+                if (json_object_object_get_ex(alt, "Messages with mutated fragment", &tmp))
+                    strncpy(entry->alternativeMutations[j], json_object_get_string(tmp), 255);
+            }
+        }
+
+        // Link the new entry into the list
+        entry->next = mutation_rule_table;
+        mutation_rule_table = entry;
+    }
+
+    json_object_put(parsed_json);  // Free JSON object
+}
+
+
+//for test
+void cc_main(){
+    char *q1 = "PLAY rtsp://127.0.0.1:8554/wavAudioTest/ RTSP/1.0\r\nCSeq: 4\r\nUser-Agent: ./testRTSPClient (LIVE555 Streaming Media v2018.08.28)\r\nSession: 000022B8\r\nRange: npt=0.000-\r\n\r\nPLAY rtsp://127.0.0.1:8552/w�vAudioTest/ RTSP/1.0\r\nCSeq: 4\r\nUser-AgentS ./testRTSPClient (LIVE555 Streaming Media v201Q.08.28)\r\nSesS~on: 000022B8\r\nRange: npt=0.000-\r\n\r\nSETUP rtsf://127.0.0.K:8554/wavAudioTest/RangeP/1.0\r\nCSeq: 3\r\nUser-Agent: ./testRTSPClient (LIVE555 Streaming Media v2018.08.28)\r\nTranspor:aming Media v201 R\r\nRanPLAYnpt=0.000-\r\n\r\nSETUP TP/AVP;unicas ";
+    char *q2 = "PLAY rtsp://127.0.0.1:8554/wavAudioTest/ RTSP/1.0\r\nCSeq: 4\r\nUser-Agent: ./testRTSPClient (LIVE555 Streaming Media v2018.08.28)\r\nSession: 000022B8\r\nRange: npt=0.000-\r\n\r\nSETUP rtsp://127.0.0.1:8554/wavAudioTest/track1 RTSP/1.0\r\nCSeq: 3\r\nUser-Agent: ./testRTSPClient (LIVE555 Streaming Media v2018.08.28)\r\nTransport: RTP/AVP;unicast;client_port=37952-37953\r\n\r\nDESCRIBE rtsp://127.0.0.1:8554/wavAudioTest RTSP/1.0\r\nCSeq: 2\r\nUser-Agent: .!tPAUSEgent: .Dtest@TSPClient (LIVE555 Streaming Media v�";
+    
+    unsigned int s1[] = {454, 454, 400, 400};
+    unsigned int s2[] = {454, 200, 404};
+    unsigned int num_key_message_pairs = 0;
+    int count1, count2;
+    char **list_q1 = split_string(q1, "\r\n\r\n", &count1);
+    char **list_q2 = split_string(q2, "\r\n\r\n", &count2);
+    
+    char *first_question;
+    char *prompt = construct_prompt_for_mutation_analyse(list_q1, s1, count1, list_q2, s2, count2, &first_question, &num_key_message_pairs);
+    printf("prompt: %s\n", prompt);
+    printf("first_question: %s\n", first_question);
+    
+    char *llm_answer = chat_with_llm(prompt, "turbo", GRAMMAR_RETRIES, 0.5); 
+    if (llm_answer == NULL)
+      goto free_llm_answer;
+      
+    printf("prompt: %s\n", prompt);
+    printf("llm_answer: %s\n", llm_answer);
+
+    save_to_json_file("llm_output.json", prompt, llm_answer);
+    updateMutationRuleTable(llm_answer);    // 更新变异规则表
+    printMutationRuleTable();  // 打印整个链表
+
+    free(prompt);
+free_llm_answer:
+    free(llm_answer);
+}
+
+int main() {
+    cc_main();
+
+
+    // char *llm_answer = "{\n\"Mutation Intervals Analysis\": [\n{\n\"Mutation Interval Index\": 1,\n\"Described Message Pair\": \"M_before_muta[1] to M_after_muta[1]\",\n\"State Before Mutation\": 454,\n\"State After Mutation\": 200,\n\"M_before_muta Mutation Interval Content\": \"w�vAudioTest\",\n\"M_after_muta Mutation Interval Content\": \"track1\",\n\"M_before_muta Mutation Interval Location Info\": {\n\"Message Position Index\": 1,\n\"Request method of the message\": \"PLAY\",\n\"Mutation Interval Offset\": 36,\n\"Mutation Interval Length\": 11\n},\n\"M_after_muta Mutation Interval Location Info\": {\n\"Message Position Index\": 1,\n\"Request method of the message\": \"SETUP\",\n\"Mutation Interval Offset\": 36,\n\"Mutation Interval Length\": 6\n},\n\"Structural Sensitivity Score\": 10,\n\"Scoring Basis\/Reason\": \"The mutation of the URI path in the RTSP message significantly impacted the state transition.\",\n\"Alternative Mutation Methods Leading to the Same State Transition\": [\n{\"Alternative Mutated Fragment\": \"wavAudioTest\",\n\"Messages with mutated fragment\": \"PLAY rtsp:\/\/127.0.0.1:8554\/wavAudioTest\/ RTSP\/1.0\\nCSeq: 4\\nUser-Agent: .\/testRTSPClient (LIVE555 Streaming Media v2018.08.28)\\nSession: 000022B8\\nRange: npt=0.000-\"},\n{\"Alternative Mutated Fragment\": \"track1\",\n\"Messages with mutated fragment\": \"SETUP rtsp:\/\/127.0.0.1:8554\/wavAudioTest\/track1 RTSP\/1.0\\nCSeq: 3\\nUser-Agent: .\/testRTSPClient (LIVE555 Streaming Media v2018.08.28)\\nTransport: RTP\/AVP;unicast;client_port=37952-37953\"},\n{\"Alternative Mutated Fragment\": \"w�vAudioTest\",\n\"Messages with mutated fragment\": \"PLAY rtsp:\/\/127.0.0.1:8552\/w�vAudioTest\/ RTSP\/1.0\\nCSeq: 4\\nUser-AgentS .\/testRTSPClient (LIVE555 Streaming Media v201Q.08.28)\\nSesS~on: 000022B8\\nRange: npt=0.000-\"}\n]\n},\n{\n\"Mutation Interval Index\": 2,\n\"Described Message Pair\": \"M_before_muta[2] to M_after_muta[2]\",\n\"State Before Mutation\": 400,\n\"State After Mutation\": 404,\n\"M_before_muta Mutation Interval Content\": \"Transpor\",\n\"M_after_muta Mutation Interval Content\": \"Transport\",\n\"M_before_muta Mutation Interval Location Info\": {\n\"Message Position Index\": 2,\n\"Request method of the message\": \"PLAY\",\n\"Mutation Interval Offset\": 92,\n\"Mutation Interval Length\": 8\n},\n\"M_after_muta Mutation Interval Location Info\": {\n\"Message Position Index\": 2,\n\"Request method of the message\": \"SETUP\",\n\"Mutation Interval Offset\": 86,\n\"Mutation Interval Length\": 8\n},\n\"Structural Sensitivity Score\": 8,\n\"Scoring Basis\/Reason\": \"The mutation of the Transport header field in the RTSP message impacted the state transition.\",\n\"Alternative Mutation Methods Leading to the Same State Transition\": [\n{\"Alternative Mutated Fragment\": \"Transpor\",\n\"Messages with mutated fragment\": \"SETUP rtsf:\/\/127.0.0.K:8554\/wavAudioTest\/RangeP\/1.0\\nCSeq: 3\\nUser-Agent: .\/testRTSPClient (LIVE555 Streaming Media v2018.08.28)\\nTranspor:aming Media v201 R\\nRanPLAYnpt=0.000-\"},\n{\"Alternative Mutated Fragment\": \"Transport\",\n\"Messages with mutated fragment\": \"SETUP rtsp:\/\/127.0.0.1:8554\/wavAudioTest\/track1 RTSP\/1.0\\nCSeq: 3\\nUser-Agent: .\/testRTSPClient (LIVE555 Streaming Media v2018.08.28)\\nTransport: RTP\/AVP;unicast;client_port=37952-37953\"},\n{\"Alternative Mutated Fragment\": \"Transpor\",\n\"Messages with mutated fragment\": \"SETUP TP\/AVP;unicas \"}\n]\n}\n]\n}";
+    // updateMutationRuleTable(llm_answer);    // 更新变异规则表
+    // printMutationRuleTable();  // 打印整个链表
+
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // aflnet变异函数
 void perform_mutation_and_fuzzing(u8** argv, u8* out_buf, s32 len, u32 M2_len, u8* eff_map, u64* orig_hit_cnt, u64* new_hit_cnt, u8* orig_in, u8 ret_val, u8 doing_det, u32 prev_cksum, u32 a_len, u8* a_collect, u32 eff_cnt, u8* in_buf, u8* ex_tmp, u32 splice_cycle, u32 perf_score, u32 orig_perf, u32 fd, u32 temp_len, u64 havoc_queued) {
+
   s32 i, j;
 
   /* Skip right away if -d is given, if we have done deterministic fuzzing on
