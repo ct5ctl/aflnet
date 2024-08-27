@@ -4328,13 +4328,17 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
 
   if (fault == crash_mode) { 
 
+    fprintf(stderr, "Fault matches crash_mode, fault code: %d\n", fault); // Debug info
+
     /* Keep only if there are new bits in the map, add to queue for
        future fuzzing, etc. */
-
+    
     if (!(hnb = has_new_bits(virgin_bits))) {  //if there are no new bits, return 0
       if (crash_mode) total_crashes++;
       return 0;
     }
+
+
 
 #ifndef SIMPLE_FILES
 
@@ -4348,15 +4352,18 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
 #endif /* ^!SIMPLE_FILES */
 
     u32 full_len = save_kl_messages_to_file(kl_messages, fn, 0, messages_sent);
+    fprintf(stderr, "Saved messages to file. Length: %u\n", full_len); // Debug info
 
     /* We use the actual length of all messages (full_len), not the len of the mutated message subsequence (len)*/
     add_to_queue(fn, full_len, 0);
 
     if (state_aware_mode) update_state_aware_variables(queue_top, 0); 
+    fprintf(stderr, "Updated state-aware variables.\n"); // Debug info
 
     /* save the seed to file for replaying */
     u8 *fn_replay = alloc_printf("%s/replayable-queue/%s", out_dir, basename(queue_top->fname));
     save_kl_messages_to_file(kl_messages, fn_replay, 1, messages_sent);
+    fprintf(stderr, "Saved messages to file."); // Debug info
     ck_free(fn_replay);
 
     if (hnb == 2) {
