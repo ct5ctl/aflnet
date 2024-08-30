@@ -28,7 +28,7 @@ region_t* extract_requests_tftp(unsigned char* buf, unsigned int buf_size, unsig
   unsigned int cur_end = 0;
   for (unsigned int byte_count = 0; byte_count < buf_size; byte_count++) {
     memcpy(&mem[mem_count], buf + byte_count, 1);
-    if ((mem_count > 1) && (memcmp(&mem[mem_count - 1], terminator, 1) == 0)){
+    if ((mem_count > 1) && (memcmp(&mem[mem_count - 1], terminator, 1) == 0)){  //一个rgion的结束标志
         region_count++;
         regions = (region_t *)ck_realloc(regions, region_count * sizeof(region_t));
         regions[region_count - 1].start_byte = cur_start;

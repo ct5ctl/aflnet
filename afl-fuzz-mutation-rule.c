@@ -1,14 +1,9 @@
 #include <sys/types.h>
 #include "afl-fuzz-global.h"
-
-void perform_mutation_and_fuzzing(u8** argv, u8* out_buf, s32 len, u32 M2_len, u8* eff_map, u64* orig_hit_cnt, u64* new_hit_cnt, u8* orig_in, u8 ret_val, u8 doing_det, u32 prev_cksum, u32 a_len, u8* a_collect, u32 eff_cnt, u8* in_buf, u8* ex_tmp, u32 splice_cycle, u32 perf_score, u32 orig_perf, u32 fd, u32 temp_len, u64 havoc_queued);
-
-
-// 建表与更新表
-//以链表形式构建的mutation_rule_table，每个节点包含一个mutation_rule结构体，mutation_rule结构体包含了一个mutation_rule结构体的所有信息
+#include "chat-llm.h"
 
 // void Update_mutation_rule_table_and_evaluate(selected_seed, s1, kl_messages, state_sequence)
-void Update_mutation_rule_table_and_evaluate(q1, s1, q2, s2)
+void Update_mutation_rule_table_and_evaluate(char** argv, const char *q1, const char *s1, const char *q2, const char *s2)
 {
     unsigned int num_key_message_pairs = 0;
     int count1, count2;
@@ -29,41 +24,177 @@ void Update_mutation_rule_table_and_evaluate(q1, s1, q2, s2)
     save_to_json_file("llm_output.json", prompt, llm_answer);
     
     //评估变异规则表（先评估再更新）
-    evaluate_and_update_MutationRuleTable(llm_answer, q2);
+    evaluate_and_update_MutationRuleTable(argv, llm_answer, q2);
 
-    free(prompt);
 free_llm_answer:
     free(llm_answer);
+    free(prompt);
 }
 
 
-void evaluate_and_update_MutationRuleTable(llm_answer, kl_messages)
+// 评估并更新变异规则表--------------------------------------------------------------------------------
+//common_fuzz_stuff修改后的函数，不进行保存interesting操作
+u8 alternative_common_fuzz_stuff(char** argv, u8* out_buf, u32 len)
+{
+  u8 fault;
+
+  if (post_handler) {
+
+    out_buf = post_handler(out_buf, &len);
+    if (!out_buf || !len) return 0;
+
+  }
+
+  /* AFLNet update kl_messages linked list */
+
+  // parse the out_buf into messages
+  u32 region_count = 0;
+  region_t *regions = (*extract_requests)(out_buf, len, &region_count); 
+  if (!region_count) PFATAL("AFLNet Region count cannot be Zero");
+
+  // update kl_messages linked list
+  u32 i;
+  kliter_t(lms) *prev_last_message, *cur_last_message;
+  prev_last_message = get_last_message(kl_messages); //获取链接列表中的最后一条信息。由于 kl_messages->tail 指向一个空项，我们不能用它来获取最后一条信息
+
+  // limit the messages based on max_seed_region_count to reduce overhead如果超出max_seed_region_count限制，则将超出数量的剩余的所有region合并成一个region
+  for (i = 0; i < region_count; i++) {
+    u32 len;
+    //Identify region size
+    if (i == max_seed_region_count) {
+      len = regions[region_count - 1].end_byte - regions[i].start_byte + 1; //如果超出max_seed_region_count限制，则将剩余的所有region合并成一个message
+    } else {
+      len = regions[i].end_byte - regions[i].start_byte + 1;
+    }
+
+    //Create a new message
+    message_t *m = (message_t *) ck_alloc(sizeof(message_t));
+
+    m->mdata = (char *) ck_alloc(len);
+    m->msize = len;
+    if (m->mdata == NULL) PFATAL("Unable to allocate memory region to store new message");
+    memcpy(m->mdata, &out_buf[regions[i].start_byte], len);
+
+    //Insert the message to the linked list
+    *kl_pushp(lms, kl_messages) = m;  //将m插入到kl_messages的尾部
+
+    //Update M2_next in case it points to the tail (M3 is empty)
+    //because the tail in klist is updated once a new entry is pushed into it
+    //in fact, the old tail storage is used to store the newly added entry and a new tail is created
+    if (M2_next->next == kl_end(kl_messages)) { 
+      M2_next = kl_end(kl_messages);
+    }
+
+    if (i == max_seed_region_count) break;
+  }
+  ck_free(regions);
+
+  cur_last_message = get_last_message(kl_messages);
+
+  // update the linked list with the new M2 & free the previous M2
+
+  //detach the head of previous M2 from the list
+  kliter_t(lms) *old_M2_start;
+  if (M2_prev == NULL) {
+    old_M2_start = kl_begin(kl_messages);
+    kl_begin(kl_messages) = kl_next(prev_last_message);
+    kl_next(cur_last_message) = M2_next;
+    kl_next(prev_last_message) = kl_end(kl_messages);
+  } else {    // 这里相当于把M2_prev和prev_last_message之间的所有message（老M2）都删除了
+    old_M2_start = kl_next(M2_prev);
+    kl_next(M2_prev) = kl_next(prev_last_message);
+    kl_next(cur_last_message) = M2_next;
+    kl_next(prev_last_message) = kl_end(kl_messages);
+  }
+
+  // free the previous M2
+  kliter_t(lms) *cur_it, *next_it;
+  cur_it = old_M2_start;
+  next_it = kl_next(cur_it);
+  do {
+    ck_free(kl_val(cur_it)->mdata);
+    ck_free(kl_val(cur_it));
+    kmp_free(lms, kl_messages->mp, cur_it);
+    --kl_messages->size;
+
+    cur_it = next_it;
+    next_it = kl_next(next_it);
+  } while(cur_it != M2_next);
+
+  /* End of AFLNet code */
+
+  fault = run_target(argv, exec_tmout);
+
+  //Update fuzz count, no matter whether the generated test is interesting or not
+  if (state_aware_mode) update_fuzzs();
+
+  if (stop_soon) return 1;
+
+  if (fault == FAULT_TMOUT) {
+
+    if (subseq_tmouts++ > TMOUT_LIMIT) {
+      cur_skipped_paths++;
+      return 1;
+    }
+
+  } else subseq_tmouts = 0;
+
+  /* Users can hit us with SIGUSR1 to request the current input
+     to be abandoned. */
+
+  if (skip_requested) {
+
+     skip_requested = 0;
+     cur_skipped_paths++;
+     return 1;
+
+  }
+
+  /* This handles FAULT_ERROR for us: */
+
+  // queued_discovered += save_if_interesting(argv, out_buf, len, fault);
+  
+
+
+  if (!(stage_cur % stats_update_freq) || stage_cur + 1 == stage_max)
+    show_stats();
+
+  return 0;
+}
+
+void evaluate_and_update_MutationRuleTable(char** argv, const char *llm_answer, const char *kl_messages)
 {
   //使用alternative方法评估变异规则表项Structural Sensitivity Score（评估llm给出的Structural Sensitivity Score的可信度）
   unsigned int Structural_Sensitivity_Score = 0;  //评估器
   //使用alternative方法变异kl_message,根据状态转换是否成功评估Structural Sensitivity Score的可信度
-  evaluate_structural_sensitivity(llm_answer, kl_messages, &Structural_Sensitivity_Score);
+  evaluate_structural_sensitivity(argv, llm_answer, kl_messages, &Structural_Sensitivity_Score);
   //更新变异规则表
   if(Structural_Sensitivity_Score > 0)
     updateMutationRuleTable(llm_answer, Structural_Sensitivity_Score);
 }
 
-void evaluate_structural_sensitivity(llm_answer, kl_messages, &Structural_Sensitivity_Score)
-{
-  //步骤1：解析llm_answer，获取llm给出的Structural_Sensitivity_Score赋值给Structural_Sensitivity_Score，获取Alternative Mutation Methods Leading to the Same State Transition信息，用于变异kl_messages
-  //步骤2：使用Alternative Mutation Methods Leading to the Same State Transition中的信息变异kl_messages并对目标程序进行多次测试（次数为Alternative Mutation Methods Leading to the Same State Transition中给出的变异方法个数），根据状态转换是否成功评估Structural Sensitivity Score的可信度（成功+2，失败-3）
+void evaluate_structural_sensitivity(char** argv, const char *llm_answer, const char *kl_messages, unsigned int *Structural_Sensitivity_Score) {
+    //步骤1：解析llm_answer，获取llm给出的Structural_Sensitivity_Score赋值给Structural_Sensitivity_Score，获取Alternative Mutation Methods Leading to the Same State Transition信息，用于变异kl_messages
+    //步骤2：使用Alternative Mutation Methods Leading to the Same State Transition中的信息变异kl_messages并对目标程序进行多次测试（次数为Alternative Mutation Methods Leading to the Same State Transition中给出的变异方法个数），根据状态转换是否成功评估Structural Sensitivity Score的可信度（成功+2，失败-3）
 
-}
-
-void evaluate_structural_sensitivity(const char *llm_answer, const char *kl_messages, unsigned int *Structural_Sensitivity_Score) {
     struct json_object *parsed_json;
     struct json_object *intervals;
     struct json_object *interval;
+    struct json_object *interval_location_info;
+    struct json_object *message_index;
+    struct json_object *interval_offset;
+    struct json_object *interval_length;
+    struct json_object *State_After_Mutation;
+
     struct json_object *alternatives;
     struct json_object *alternative;
     struct json_object *mutated_fragment;
     struct json_object *messages_with_mutated_fragment;
-    char *mutated_messages;
+    
+    
+
+    char *out_buf;
+    size_t len_out_buf;
     size_t i, j;
 
     parsed_json = json_tokener_parse(llm_answer);
@@ -79,22 +210,49 @@ void evaluate_structural_sensitivity(const char *llm_answer, const char *kl_mess
         interval = json_object_array_get_idx(intervals, i);
         if (json_object_object_get_ex(interval, "Alternative Mutation Methods Leading to the Same State Transition", &alternatives)) {
             size_t n_alternatives = json_object_array_length(alternatives);
-            printf
+            json_object_object_get_ex(interval, "State After Mutation", &State_After_Mutation);
+            // 获取变异区间位置信息
+            json_object_object_get_ex(interval, "M_before_muta Mutation Interval Location Info", &interval_location_info);
+            json_object_object_get_ex(interval_location_info, "Message Index", &message_index);
+            json_object_object_get_ex(interval_location_info, "Mutation Interval Offset in the message", &interval_offset);
+            json_object_object_get_ex(interval_location_info, "Mutation Interval Length", &interval_length);
+            
+            // 遍历每个变异区间的所有alternative
             for (j = 0; j < n_alternatives; ++j) {
                 alternative = json_object_array_get_idx(alternatives, j);
-                if (json_object_object_get_ex(alternative, "Mutated Fragment", &mutated_fragment) &&
+                if (json_object_object_get_ex(alternative, "Mutated Fragment content", &mutated_fragment) &&
                     json_object_object_get_ex(alternative, "Messages with mutated fragment", &messages_with_mutated_fragment)) {
-                    
-                    mutated_messages = strdup(kl_messages);
+                    // out_buf = strdup(kl_messages);
                     // Apply the mutation described in `messages_with_mutated_fragment` to `mutated_messages`
+                    // TODO：将alternative中的变异方法应用于M2，并修改相应参数
+                    // 使用selected_seed进行变异
+                    // 1.对于片段式变异，需要传入M1_len，通过"Mutation Interval Offset"- M1_len 计算Mutated Fragment替换偏移量
+                    // 1.还可以传入M1_region_count，通过"所处报文号"-M1_region_count 计算Mutated Fragment替换位置所在region
+                    // 2.对于region替换式变异，直接将"Messages with mutated fragment"替换为out_buf即可
                     
-
-                    if (simulate_state_transition(mutated_messages)) {
+                    //1.region替换式变异——直接将messages_with_mutated_fragment的值替换为out_buf，并计算len_out_buf
+                    if (json_object_get_string(messages_with_mutated_fragment) != NULL) {
+                        out_buf = strdup(json_object_get_string(messages_with_mutated_fragment));
+                        len_out_buf = strlen(out_buf);
+                    }
+                    // Evaluate the state transition，调用common_fuzz_stuff
+                    if (test_alternative(argv, out_buf, len_out_buf, State_After_Mutation, message_index)) {
                         *Structural_Sensitivity_Score += 2;  // Success: Increment score
                     } else {
                         *Structural_Sensitivity_Score -= 3;  // Failure: Decrement score
                     }
-                    free(mutated_messages);
+                    // //2.对于片段式变异，传入M1_region_count，通过"所处报文号"-M1_region_count 计算Mutated Fragment替换位置所在region
+                    // if (json_object_get_string(messages_with_mutated_fragment) != NULL) {
+                    //     out_buf = strdup(json_object_get_string(messages_with_mutated_fragment));
+                    //     len_out_buf = strlen(out_buf);
+                    // }
+                    // // Evaluate the state transition，调用common_fuzz_stuff
+                    // if (test_alternative(argv, out_buf, len_out_buf)) {
+                    //     *Structural_Sensitivity_Score += 2;  // Success: Increment score
+                    // } else {
+                    //     *Structural_Sensitivity_Score -= 3;  // Failure: Decrement score
+                    // }
+                    free(out_buf);
                 }
             }
         }
@@ -103,6 +261,30 @@ void evaluate_structural_sensitivity(const char *llm_answer, const char *kl_mess
     json_object_put(parsed_json);
 }
 
+bool test_alternative(char** argv, char *out_buf, size_t len_out_buf, struct json_object *State_After_Mutation, struct json_object *Message_Index)
+{
+    //common_fuzz_stuff修改后的函数，不进行保存interesting操作
+    alternative_common_fuzz_stuff(argv, out_buf, len_out_buf);
+
+    // 查看到达的状态是否符合LLM的预测
+    if (state_aware_mode) {
+      // 读取状态序列
+      unsigned int state_count;
+      if (!response_buf_size || !response_bytes) return;
+
+      unsigned int *state_sequence = (*extract_response_codes)(response_buf, response_buf_size, &state_count);
+      if(state_sequence == NULL || State_After_Mutation == NULL || Message_Index == NULL) return false;
+      // 将当前状态序列的第Message_Index个状态与State_After_Mutation进行比较
+      if (state_sequence[Message_Index] == json_object_get_int(State_After_Mutation)) {
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+}
+
+// 以链表形式构建的mutation_rule_table，每个节点包含一个mutation_rule结构体，mutation_rule结构体包含了一个mutation_rule结构体的所有信息
 void updateMutationRuleTable(char *llm_answer, unsigned int Structural_Sensitivity_Score) {
     struct json_object *parsed_json;
     struct json_object *intervals;
@@ -177,30 +359,8 @@ void cc_main(){
     
     unsigned int s1[] = {454, 454, 400, 400};
     unsigned int s2[] = {454, 200, 404};
-    unsigned int num_key_message_pairs = 0;
-    int count1, count2;
-    char **list_q1 = split_string(q1, "\r\n\r\n", &count1);
-    char **list_q2 = split_string(q2, "\r\n\r\n", &count2);
-    
-    char *first_question;
-    char *prompt = construct_prompt_for_mutation_analyse(list_q1, s1, count1, list_q2, s2, count2, &first_question, &num_key_message_pairs);
-    printf("prompt: %s\n", prompt);
-    printf("first_question: %s\n", first_question);
-    
-    char *llm_answer = chat_with_llm(prompt, "turbo", GRAMMAR_RETRIES, 0.5); 
-    if (llm_answer == NULL)
-      goto free_llm_answer;
-      
-    printf("prompt: %s\n", prompt);
-    printf("llm_answer: %s\n", llm_answer);
 
-    save_to_json_file("llm_output.json", prompt, llm_answer);
-    updateMutationRuleTable(llm_answer);    // 更新变异规则表
-    printMutationRuleTable();  // 打印整个链表
-
-    free(prompt);
-free_llm_answer:
-    free(llm_answer);
+    Update_mutation_rule_table_and_evaluate(q1, s1, q2, s2);
 }
 
 int main() {

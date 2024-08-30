@@ -830,7 +830,7 @@ struct queue_entry *choose_seed(u32 target_state_id, u8 mode)
 
   k = kh_get(hms, khms_states, target_state_id);
   if (k != kh_end(khms_states)) {
-    state = kh_val(khms_states, k);
+    state = kh_val(khms_states, k); //Get the state information
 
     if (state->seeds_count == 0) return NULL;
 
@@ -938,8 +938,10 @@ void ensure_directory_exists(const char *path) {
 }
 
 /* Update state-aware variables */
-void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
+void update_state_aware_variables(struct queue_entry *q, char** argv, u8 dry_run)
 {
+  fprintf(log_file, "enter update_state_aware_variables\n");
+  fflush(log_file);  // 确保信息被立即写入文件
   khint_t k;
   int discard, i;
   state_info_t *state;
@@ -1030,7 +1032,17 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
     //     ck_free(kl_messages_str);
     //     cJSON_Delete(json_root);
     // }
-    // for test
+
+
+
+    // 保存有趣的kl_message和对应的状态序列，并能够在之后的运行中通过kl_message找到对应的状态序列
+    // Save the interesting kl_messages and their corresponding state sequences
+    kl_messages_t *kl_messages_entry = (kl_messages_t *)ck_alloc(sizeof(kl_messages_t));
+    kl_messages_entry->msize = messages_sent;
+    kl_messages_entry->mdata = (u8 *)ck_alloc(messages_sent);
+    memcpy(kl_messages_entry->mdata, response_buf, messages_sent);
+    kl_pushp(lms, kl_messages, kl_messages_entry);
+
     if (dry_run == 0) 
     {
         // Ensure the directory exists
@@ -1085,6 +1097,15 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
                     fread(seed_content, 1, seed_len, seed_file);
                     seed_content[seed_len] = '\0';
                     cJSON_AddStringToObject(json_root, "selected_seed", seed_content);
+                    // // 变异规则表更新
+                    // //获取selected_seed对应的状态序列
+                    // state_sequence_seed = (*extract_response_codes)(seed_content, seed_len, &state_count);
+
+
+
+                    // // TODO:如何获得s1（selected_seed的状态序列）
+                    // Update_mutation_rule_table_and_evaluate(argv, seed_content, const char *s1, kl_messages_str, state_sequence);
+
                     free(seed_content);
                 }
                 fclose(seed_file);
@@ -1108,10 +1129,14 @@ void update_state_aware_variables(struct queue_entry *q, u8 dry_run)
         cJSON_Delete(json_root);
     }
 
+    fprintf(log_file, "interesting state sequence found\n");
+    fflush(log_file);  // 确保信息被立即写入文件
+
 
 
     //Update the IPSM graph
     if (state_count > 1) {
+      
       unsigned int prevStateID = state_sequence[0];
 
       for(i=1; i < state_count; i++) {
@@ -4321,6 +4346,9 @@ static void write_crash_readme(void) {
 
 static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
 
+  fprintf(log_file, "enter save_if_interesting\n");
+  fflush(log_file);  // 确保信息被立即写入文件
+
   u8  *fn = "";
   u8  hnb;
   //s32 fd;
@@ -4357,7 +4385,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
     /* We use the actual length of all messages (full_len), not the len of the mutated message subsequence (len)*/
     add_to_queue(fn, full_len, 0);
 
-    if (state_aware_mode) update_state_aware_variables(queue_top, 0); 
+    if (state_aware_mode) update_state_aware_variables(queue_top, argv, 0); 
     fprintf(stderr, "Updated state-aware variables.\n"); // Debug info
 
     /* save the seed to file for replaying */
@@ -5748,7 +5776,7 @@ u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 
   // parse the out_buf into messages
   u32 region_count = 0;
-  region_t *regions = (*extract_requests)(out_buf, len, &region_count);
+  region_t *regions = (*extract_requests)(out_buf, len, &region_count); 
   if (!region_count) PFATAL("AFLNet Region count cannot be Zero");
 
   // update kl_messages linked list
@@ -5756,7 +5784,7 @@ u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   kliter_t(lms) *prev_last_message, *cur_last_message;
   prev_last_message = get_last_message(kl_messages); //获取链接列表中的最后一条信息。由于 kl_messages->tail 指向一个空项，我们不能用它来获取最后一条信息
 
-  // limit the messages based on max_seed_region_count to reduce overhead如果超出max_seed_region_count限制，则将剩余的所有region合并成一个message
+  // limit the messages based on max_seed_region_count to reduce overhead如果超出max_seed_region_count限制，则将超出数量的剩余的所有region合并成一个region
   for (i = 0; i < region_count; i++) {
     u32 len;
     //Identify region size
@@ -6289,7 +6317,7 @@ AFLNET_REGIONS_SELECTION:;
   }
 
   /* Construct the kl_messages linked list and identify boundary pointers (M2_prev and M2_next) */
-  kl_messages = construct_kl_messages(queue_cur->fname, queue_cur->regions, queue_cur->region_count);
+  kl_messages = construct_kl_messages(queue_cur->fname, queue_cur->regions, queue_cur->region_count); //通过selected seed构建kl_messages链表，存储的是当前种子的所有消息
 
   kliter_t(lms) *it; //kl_messages iterator，用于遍历kl_messages
 
@@ -9181,6 +9209,19 @@ int main(int argc, char** argv) {
 
   //cc 定义全局变异规则表
   MutationEntry *mutation_rule_table = NULL;
+  //cc 日志文件
+  u8 *log_dir = alloc_printf("%s/log", out_dir);
+  ensure_directory_exists(log_dir);
+
+  // 构造日志文件的完整路径
+  u8 *log_file_path = alloc_printf("%s/aflnet.log", log_dir);
+
+  // 打开日志文件
+  FILE *log_file = fopen(log_file_path, "w");
+  if (!log_file) {
+      perror("Failed to open log file");
+      exit(1);
+  }
 
   while ((opt = getopt(argc, argv, "+i:o:f:m:t:T:dnCB:S:M:x:QN:D:W:w:e:P:KEq:s:RFc:l:")) > 0)
 
