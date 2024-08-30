@@ -930,12 +930,14 @@ char *kl_messages_to_string(klist_t(lms) *kl_messages) {
   return kl_messages_str;
 }
 
-void ensure_directory_exists(const char *path) {
-  struct stat st = {0};
-
-  if (stat(path, &st) == -1) {
-    mkdir(path, 0700);  // You might need to set appropriate permissions
-  }
+void ensure_directory_exists(const char *dir) {
+    struct stat st = {0};
+    if (stat(dir, &st) == -1) {
+        if (mkdir(dir, 0700) == -1) {
+            perror("Failed to create directory");
+            exit(EXIT_FAILURE);
+        }
+    }
 }
 
 /* Update state-aware variables */
