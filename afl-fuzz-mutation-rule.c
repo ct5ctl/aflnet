@@ -34,133 +34,133 @@ free_llm_answer:
 
 // 评估并更新变异规则表--------------------------------------------------------------------------------
 //common_fuzz_stuff修改后的函数，不进行保存interesting操作
-u8 alternative_common_fuzz_stuff(char** argv, u8* out_buf, u32 len)
-{
-  u8 fault;
+// u8 alternative_common_fuzz_stuff(char** argv, u8* out_buf, u32 len)
+// {
+//   u8 fault;
 
-  if (post_handler) {
+//   if (post_handler) {
 
-    out_buf = post_handler(out_buf, &len);
-    if (!out_buf || !len) return 0;
+//     out_buf = post_handler(out_buf, &len);
+//     if (!out_buf || !len) return 0;
 
-  }
+//   }
 
-  /* AFLNet update kl_messages linked list */
+//   /* AFLNet update kl_messages linked list */
 
-  // parse the out_buf into messages
-  u32 region_count = 0;
-  region_t *regions = (*extract_requests)(out_buf, len, &region_count); 
-  if (!region_count) PFATAL("AFLNet Region count cannot be Zero");
+//   // parse the out_buf into messages
+//   u32 region_count = 0;
+//   region_t *regions = (*extract_requests)(out_buf, len, &region_count); 
+//   if (!region_count) PFATAL("AFLNet Region count cannot be Zero");
 
-  // update kl_messages linked list
-  u32 i;
-  kliter_t(lms) *prev_last_message, *cur_last_message;
-  prev_last_message = get_last_message(kl_messages); //获取链接列表中的最后一条信息。由于 kl_messages->tail 指向一个空项，我们不能用它来获取最后一条信息
+//   // update kl_messages linked list
+//   u32 i;
+//   kliter_t(lms) *prev_last_message, *cur_last_message;
+//   prev_last_message = get_last_message(kl_messages); //获取链接列表中的最后一条信息。由于 kl_messages->tail 指向一个空项，我们不能用它来获取最后一条信息
 
-  // limit the messages based on max_seed_region_count to reduce overhead如果超出max_seed_region_count限制，则将超出数量的剩余的所有region合并成一个region
-  for (i = 0; i < region_count; i++) {
-    u32 len;
-    //Identify region size
-    if (i == max_seed_region_count) {
-      len = regions[region_count - 1].end_byte - regions[i].start_byte + 1; //如果超出max_seed_region_count限制，则将剩余的所有region合并成一个message
-    } else {
-      len = regions[i].end_byte - regions[i].start_byte + 1;
-    }
+//   // limit the messages based on max_seed_region_count to reduce overhead如果超出max_seed_region_count限制，则将超出数量的剩余的所有region合并成一个region
+//   for (i = 0; i < region_count; i++) {
+//     u32 len;
+//     //Identify region size
+//     if (i == max_seed_region_count) {
+//       len = regions[region_count - 1].end_byte - regions[i].start_byte + 1; //如果超出max_seed_region_count限制，则将剩余的所有region合并成一个message
+//     } else {
+//       len = regions[i].end_byte - regions[i].start_byte + 1;
+//     }
 
-    //Create a new message
-    message_t *m = (message_t *) ck_alloc(sizeof(message_t));
+//     //Create a new message
+//     message_t *m = (message_t *) ck_alloc(sizeof(message_t));
 
-    m->mdata = (char *) ck_alloc(len);
-    m->msize = len;
-    if (m->mdata == NULL) PFATAL("Unable to allocate memory region to store new message");
-    memcpy(m->mdata, &out_buf[regions[i].start_byte], len);
+//     m->mdata = (char *) ck_alloc(len);
+//     m->msize = len;
+//     if (m->mdata == NULL) PFATAL("Unable to allocate memory region to store new message");
+//     memcpy(m->mdata, &out_buf[regions[i].start_byte], len);
 
-    //Insert the message to the linked list
-    *kl_pushp(lms, kl_messages) = m;  //将m插入到kl_messages的尾部
+//     //Insert the message to the linked list
+//     *kl_pushp(lms, kl_messages) = m;  //将m插入到kl_messages的尾部
 
-    //Update M2_next in case it points to the tail (M3 is empty)
-    //because the tail in klist is updated once a new entry is pushed into it
-    //in fact, the old tail storage is used to store the newly added entry and a new tail is created
-    if (M2_next->next == kl_end(kl_messages)) { 
-      M2_next = kl_end(kl_messages);
-    }
+//     //Update M2_next in case it points to the tail (M3 is empty)
+//     //because the tail in klist is updated once a new entry is pushed into it
+//     //in fact, the old tail storage is used to store the newly added entry and a new tail is created
+//     if (M2_next->next == kl_end(kl_messages)) { 
+//       M2_next = kl_end(kl_messages);
+//     }
 
-    if (i == max_seed_region_count) break;
-  }
-  ck_free(regions);
+//     if (i == max_seed_region_count) break;
+//   }
+//   ck_free(regions);
 
-  cur_last_message = get_last_message(kl_messages);
+//   cur_last_message = get_last_message(kl_messages);
 
-  // update the linked list with the new M2 & free the previous M2
+//   // update the linked list with the new M2 & free the previous M2
 
-  //detach the head of previous M2 from the list
-  kliter_t(lms) *old_M2_start;
-  if (M2_prev == NULL) {
-    old_M2_start = kl_begin(kl_messages);
-    kl_begin(kl_messages) = kl_next(prev_last_message);
-    kl_next(cur_last_message) = M2_next;
-    kl_next(prev_last_message) = kl_end(kl_messages);
-  } else {    // 这里相当于把M2_prev和prev_last_message之间的所有message（老M2）都删除了
-    old_M2_start = kl_next(M2_prev);
-    kl_next(M2_prev) = kl_next(prev_last_message);
-    kl_next(cur_last_message) = M2_next;
-    kl_next(prev_last_message) = kl_end(kl_messages);
-  }
+//   //detach the head of previous M2 from the list
+//   kliter_t(lms) *old_M2_start;
+//   if (M2_prev == NULL) {
+//     old_M2_start = kl_begin(kl_messages);
+//     kl_begin(kl_messages) = kl_next(prev_last_message);
+//     kl_next(cur_last_message) = M2_next;
+//     kl_next(prev_last_message) = kl_end(kl_messages);
+//   } else {    // 这里相当于把M2_prev和prev_last_message之间的所有message（老M2）都删除了
+//     old_M2_start = kl_next(M2_prev);
+//     kl_next(M2_prev) = kl_next(prev_last_message);
+//     kl_next(cur_last_message) = M2_next;
+//     kl_next(prev_last_message) = kl_end(kl_messages);
+//   }
 
-  // free the previous M2
-  kliter_t(lms) *cur_it, *next_it;
-  cur_it = old_M2_start;
-  next_it = kl_next(cur_it);
-  do {
-    ck_free(kl_val(cur_it)->mdata);
-    ck_free(kl_val(cur_it));
-    kmp_free(lms, kl_messages->mp, cur_it);
-    --kl_messages->size;
+//   // free the previous M2
+//   kliter_t(lms) *cur_it, *next_it;
+//   cur_it = old_M2_start;
+//   next_it = kl_next(cur_it);
+//   do {
+//     ck_free(kl_val(cur_it)->mdata);
+//     ck_free(kl_val(cur_it));
+//     kmp_free(lms, kl_messages->mp, cur_it);
+//     --kl_messages->size;
 
-    cur_it = next_it;
-    next_it = kl_next(next_it);
-  } while(cur_it != M2_next);
+//     cur_it = next_it;
+//     next_it = kl_next(next_it);
+//   } while(cur_it != M2_next);
 
-  /* End of AFLNet code */
+//   /* End of AFLNet code */
 
-  fault = run_target(argv, exec_tmout);
+//   fault = run_target(argv, exec_tmout);
 
-  //Update fuzz count, no matter whether the generated test is interesting or not
-  if (state_aware_mode) update_fuzzs();
+//   //Update fuzz count, no matter whether the generated test is interesting or not
+//   if (state_aware_mode) update_fuzzs();
 
-  if (stop_soon) return 1;
+//   if (stop_soon) return 1;
 
-  if (fault == FAULT_TMOUT) {
+//   if (fault == FAULT_TMOUT) {
 
-    if (subseq_tmouts++ > TMOUT_LIMIT) {
-      cur_skipped_paths++;
-      return 1;
-    }
+//     if (subseq_tmouts++ > TMOUT_LIMIT) {
+//       cur_skipped_paths++;
+//       return 1;
+//     }
 
-  } else subseq_tmouts = 0;
+//   } else subseq_tmouts = 0;
 
-  /* Users can hit us with SIGUSR1 to request the current input
-     to be abandoned. */
+//   /* Users can hit us with SIGUSR1 to request the current input
+//      to be abandoned. */
 
-  if (skip_requested) {
+//   if (skip_requested) {
 
-     skip_requested = 0;
-     cur_skipped_paths++;
-     return 1;
+//      skip_requested = 0;
+//      cur_skipped_paths++;
+//      return 1;
 
-  }
+//   }
 
-  /* This handles FAULT_ERROR for us: */
+//   /* This handles FAULT_ERROR for us: */
 
-  // queued_discovered += save_if_interesting(argv, out_buf, len, fault);
+//   // queued_discovered += save_if_interesting(argv, out_buf, len, fault);
   
 
 
-  if (!(stage_cur % stats_update_freq) || stage_cur + 1 == stage_max)
-    show_stats();
+//   if (!(stage_cur % stats_update_freq) || stage_cur + 1 == stage_max)
+//     show_stats();
 
-  return 0;
-}
+//   return 0;
+// }
 
 void evaluate_and_update_MutationRuleTable(char** argv, const char *llm_answer, const char *kl_messages)
 {
@@ -264,7 +264,7 @@ void evaluate_structural_sensitivity(char** argv, const char *llm_answer, const 
 bool test_alternative(char** argv, char *out_buf, size_t len_out_buf, struct json_object *State_After_Mutation, struct json_object *Message_Index)
 {
     //common_fuzz_stuff修改后的函数，不进行保存interesting操作
-    alternative_common_fuzz_stuff(argv, out_buf, len_out_buf);
+    // alternative_common_fuzz_stuff(argv, out_buf, len_out_buf);
 
     // 查看到达的状态是否符合LLM的预测
     if (state_aware_mode) {
