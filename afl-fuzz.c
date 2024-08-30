@@ -9212,19 +9212,9 @@ int main(int argc, char** argv) {
 
   //cc 定义全局变异规则表
   MutationEntry *mutation_rule_table = NULL;
-  //cc 日志文件
-  u8 *log_dir = alloc_printf("%s/log", out_dir);
-  ensure_directory_exists(log_dir);
+  
+  
 
-  // 构造日志文件的完整路径
-  u8 *log_file_path = alloc_printf("%s/aflnet.log", log_dir);
-
-  // 打开日志文件
-  log_file = fopen(log_file_path, "w");
-  if (!log_file) {
-      perror("Failed to open log file");
-      exit(1);
-  }
 
   while ((opt = getopt(argc, argv, "+i:o:f:m:t:T:dnCB:S:M:x:QN:D:W:w:e:P:KEq:s:RFc:l:")) > 0)
 
@@ -9645,6 +9635,20 @@ int main(int argc, char** argv) {
   if (stop_soon) goto stop_fuzzing;
 
   /* Woop woop woop */
+
+  //cc 日志文件
+  u8 *log_dir = alloc_printf("%s/log", out_dir);
+  ensure_directory_exists(log_dir);
+
+  // 构造日志文件的完整路径
+  u8 *log_file_path = alloc_printf("%s/aflnet.log", log_dir);
+
+  // 打开日志文件
+  log_file = fopen(log_file_path, "w");
+  if (!log_file) {
+      perror("Failed to open log file");
+      exit(1);
+  }
 
   if (!not_on_tty) {
     sleep(4);
