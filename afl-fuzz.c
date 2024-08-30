@@ -1036,13 +1036,13 @@ void update_state_aware_variables(struct queue_entry *q, char** argv, u8 dry_run
 
 
 
-    // 保存有趣的kl_message和对应的状态序列，并能够在之后的运行中通过kl_message找到对应的状态序列
-    // Save the interesting kl_messages and their corresponding state sequences
-    kl_messages_t *kl_messages_entry = (kl_messages_t *)ck_alloc(sizeof(kl_messages_t));
-    kl_messages_entry->msize = messages_sent;
-    kl_messages_entry->mdata = (u8 *)ck_alloc(messages_sent);
-    memcpy(kl_messages_entry->mdata, response_buf, messages_sent);
-    kl_pushp(lms, kl_messages, kl_messages_entry);
+    // // 保存有趣的kl_message和对应的状态序列，并能够在之后的运行中通过kl_message找到对应的状态序列
+    // // Save the interesting kl_messages and their corresponding state sequences
+    // kl_messages_t *kl_messages_entry = (kl_messages_t *)ck_alloc(sizeof(kl_messages_t));
+    // kl_messages_entry->msize = messages_sent;
+    // kl_messages_entry->mdata = (u8 *)ck_alloc(messages_sent);
+    // memcpy(kl_messages_entry->mdata, response_buf, messages_sent);
+    // kl_pushp(lms, kl_messages, kl_messages_entry);
 
     if (dry_run == 0) 
     {
