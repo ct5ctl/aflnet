@@ -2,8 +2,19 @@
 #define CHAT_LLM_H
 
 #include <stdlib.h>
-#include <curl/curl.h>
+// #include <curl/curl.h>
 #include <json-c/json.h>
+
+// Maximum amount of tries to get the grammars
+#define GRAMMAR_RETRIES 5
+#define MAX_TOKENS 2048
+#define CONFIDENT_TIMES 3
+
+struct MemoryStruct
+{
+    char *memory;
+    size_t size;
+};
 
 // Function prototypes
 static size_t chat_with_llm_helper(void *contents, size_t size, size_t nmemb, void *userp);
