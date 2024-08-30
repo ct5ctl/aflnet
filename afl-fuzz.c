@@ -76,6 +76,7 @@
 //cc
 #include "afl-fuzz-global.h"
 #include "afl-fuzz-mutation-rule.h"
+FILE *log_file;
 
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined (__OpenBSD__)
 #  include <sys/sysctl.h>
@@ -9217,7 +9218,7 @@ int main(int argc, char** argv) {
   u8 *log_file_path = alloc_printf("%s/aflnet.log", log_dir);
 
   // 打开日志文件
-  FILE *log_file = fopen(log_file_path, "w");
+  log_file = fopen(log_file_path, "w");
   if (!log_file) {
       perror("Failed to open log file");
       exit(1);
